@@ -1,38 +1,78 @@
+
+//const BACKEND_URL = "https://qrcodelogin.onrender.com"; // Cloud Backend URL
+
+let scanner;
+
+// ✅ Send OTP Button Click
+document.getElementById("sendOtpBtn").addEventListener("click", function () {
+    let phone = document.getElementById("phone").value;
+    let otpDisplay = document.getElementById("otpDisplay");
+    let otpSection = document.getElementById("otpSection");
+
+    if (phone.length !== 10) {
+        alert("Please enter a valid 10-digit phone number.");
+        return;
+    }
+
+    fetch(`${BACKEND_URL}/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone })
+    })
+    .then(res => res.json())
+    .then(data => {
+        otpDisplay.innerText = "OTP: " + data.otp;
+        otpSection.style.display = "block";
+    })
+    .catch(err => console.error("Error sending OTP:", err));
+});
+
+// ✅ Verify OTP Button Click
+document.getElementById("verifyOtpBtn").addEventListener("click", function () {
+    let phone = document.getElementById("phone").value;
+    let otpInput = document.getElementById("otpInput").value;
+    let scanBtn = document.getElementById("scanQR");
+
+    fetch(`${BACKEND_URL}/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, otp: otpInput })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("✅ OTP Verified Successfully!");
+        scanBtn.style.display = "block"; // Show scan button
+    })
+    .catch(err => console.error("Error verifying OTP:", err));
+});
+
+// ✅ Scan QR Code Button Click
 document.getElementById("scanQR").addEventListener("click", function () {
-    let scanner = new Html5QrcodeScanner("qr-video", { fps: 10, qrbox: 250 });
+    if (!scanner) {
+        scanner = new Html5QrcodeScanner("qr-video", { fps: 10, qrbox: 250 });
+    }
 
     scanner.render((decodedText) => {
         scanner.clear();
-        console.log("Scanned QR Code:", decodedText);
+        scanner = null;
 
+<<<<<<< HEAD
         // Send scanned serial number to backend
         fetch("https://qrcodelogin-main-5j9v.onrender.com/fetch-user-details", {
+=======
+        let phoneNumber = document.getElementById("phone").value;
+        fetch(`${BACKEND_URL}/scan-qr`, {
+>>>>>>> 1c56fcd (first commit)
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ serialNumber: decodedText })
+            body: JSON.stringify({ serialNumber: decodedText, phone: phoneNumber })
         })
         .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert("User details fetched successfully!");
-
-                // Show "Download PDF" button
-                document.getElementById("downloadPDF").style.display = "block";
-                document.getElementById("downloadPDF").setAttribute("data-user-id", data.userId);
-            } else {
-                alert("Failed to fetch user details.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching user details:", error);
-            alert("An error occurred while fetching user details.");
-        });
-
-    }, (errorMessage) => {
-        console.error("QR Scanner Error:", errorMessage);
-        alert("QR Code scanning failed.");
+        .then(data => alert(data.message))
+        .catch(err => console.error("❌ Error storing scan:", err));
     });
 });
+<<<<<<< HEAD
 
 // Download PDF when the button is clicked
 document.getElementById("downloadPDF").addEventListener("click", function () {
@@ -55,3 +95,5 @@ document.getElementById("downloadPDF").addEventListener("click", function () {
 });
 
 
+=======
+>>>>>>> 1c56fcd (first commit)
