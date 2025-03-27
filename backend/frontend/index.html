@@ -50,7 +50,7 @@
         document.getElementById("sendOTP").addEventListener("click", function() {
             let phone = document.getElementById("phone").value;
 
-            fetch("https://qrcodelogin-main-1.onrender.com/send-otp", {
+            fetch("https://qrcodelogin-9741.onrender.com/send-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ phone })
@@ -81,7 +81,7 @@
             let phone = document.getElementById("phone").value; // Ensure phone number is sent
             let otp = document.getElementById("otp").value;
 
-            fetch("https://qrcodelogin-main-1.onrender.com/verify-otp", {
+            fetch("https://qrcodelogin-9741.onrender.com/verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ phone, otp }) // Include phone number
@@ -115,7 +115,7 @@
                 scanner.clear(); // Stop scanner
                 scanner = null;
 
-                fetch("https://qrcodelogin-main-1.onrender.com/scan-qr", {
+                fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ serialNumber: decodedText })
