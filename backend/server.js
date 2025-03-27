@@ -5,12 +5,12 @@ const bodyParser = require("body-parser");
 const { Pool } = require("pg");
 
 const app = express();
-app.use(cors({ origin: "https://qrcodelogin-main-5j9v.onrender.com" }));
+app.use(cors({ origin: "https://qrcodelogin-1-em0m.onrender.com" }));
 app.use(bodyParser.json());
 
 // PostgreSQL Database Connection
 const pool = new Pool({
-    connectionString: "postgresql://neondb_owner:npg_ySPh4vCn7mLU@ep-bold-field-a5wfrijr-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",
+    connectionString: "postgresql://neondb_owner:npg_93ADyYGaolsL@ep-falling-brook-a563oirs-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",
     ssl: {
         rejectUnauthorized: false // Allows SSL connections
     }
