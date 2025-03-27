@@ -166,44 +166,61 @@
         // Scan QR Code Functionality with user tracking
         document.getElementById("scanQR").addEventListener("click", function() {
             if (!scanner) {
-                scanner = new Html5QrcodeScanner("qr-video", { fps: 10, qrbox: 250 });
+                scanner = new Html5QrcodeScanner("qr-video", { 
+                    fps: 10, 
+                    qrbox: 250,
+                    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+                });
             }
 
-            scanner.render((decodedText) => {
-                console.log("Scanned QR Code:", decodedText);
-                scanner.clear();
-                scanner = null;
-
-                let phone = document.getElementById("phone").value;
-                
-                fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        serialNumber: decodedText,
-                        phone: phone
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.duplicate) {
-                        document.getElementById("scanMessage").innerText = "You've already scanned this QR code!";
-                    } else if (data.success) {
-                        document.getElementById("scanMessage").innerText = "QR Code scanned successfully!";
-                        // Refresh the scan history after successful scan
-                        loadUserScans(phone);
-                    } else {
-                        document.getElementById("scanMessage").innerText = data.message || "Error scanning QR code";
-                    }
-                })
-                .catch(error => {
-                    console.error("Error scanning QR Code:", error);
-                    document.getElementById("scanMessage").innerText = "Failed to scan QR Code. Please try again.";
-                });
-            }, (errorMessage) => {
-                console.error("QR Scanner Error:", errorMessage);
-            });
+            scanner.render(
+                (decodedText) => {
+                    // Success callback
+                    handleScannedQR(decodedText);
+                },
+                (errorMessage) => {
+                    // Failure callback
+                    console.error("QR Scanner Error:", errorMessage);
+                    document.getElementById("scanMessage").innerText = "Scanner error: " + errorMessage;
+                }
+            );
         });
+
+        function handleScannedQR(decodedText) {
+            scanner.clear();
+            scanner = null;
+
+            let phone = document.getElementById("phone").value;
+            
+            fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    serialNumber: decodedText,
+                    phone: phone
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.duplicate) {
+                    document.getElementById("scanMessage").innerText = "You've already scanned this QR code!";
+                    document.getElementById("scanMessage").style.color = "red";
+                } else if (data.success) {
+                    document.getElementById("scanMessage").innerText = "QR Code scanned successfully!";
+                    document.getElementById("scanMessage").style.color = "green";
+                    // Refresh the scan history after successful scan
+                    loadUserScans(phone);
+                } else {
+                    document.getElementById("scanMessage").innerText = data.message || "Error scanning QR code";
+                    document.getElementById("scanMessage").style.color = "red";
+                }
+            })
+            .catch(error => {
+                console.error("Error scanning QR Code:", error);
+                document.getElementById("scanMessage").innerText = "Failed to scan QR Code. Please try again.";
+                document.getElementById("scanMessage").style.color = "red";
+            });
+        }
 
         // Function to load user's scan history
         function loadUserScans(phone) {
@@ -239,7 +256,11 @@
                     }
                 }
             })
-            .catch(err => console.error("Error loading user scans:", err));
+            .catch(err => {
+                console.error("Error loading user scans:", err);
+                document.getElementById("scanMessage").innerText = "Failed to load scan history";
+                document.getElementById("scanMessage").style.color = "red";
+            });
         }
     </script>
 </body>
