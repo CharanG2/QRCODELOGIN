@@ -12,7 +12,7 @@ app.use(bodyParser.json());
 const pool = new Pool({
     connectionString: "postgresql://neondb_owner:npg_93ADyYGaolsL@ep-falling-brook-a563oirs-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",
     ssl: {
-        rejectUnauthorized: false // Allows SSL connections
+        rejectUnauthorized: false
     }
 });
 
@@ -24,7 +24,6 @@ pool.connect()
         process.exit(1);
     });
 
-// Store OTPs mapped to phone numbers
 let otpStore = {};
 
 // Base URL Route
@@ -64,30 +63,55 @@ app.post("/verify-otp", (req, res) => {
 
 // Scan QR Code and store in database
 app.post("/scan-qr", async (req, res) => {
-    const { serialNumber } = req.body;
-    console.log("Received serial Number:", serialNumber);
+    const { serialNumber, phone } = req.body;
+    console.log("Received serial Number:", serialNumber, "for phone:", phone);
 
-    if (!serialNumber) {
-        return res.status(400).json({ message: "Serial number is required!" });
+    if (!serialNumber || !phone) {
+        return res.status(400).json({ message: "Serial number and phone number are required!" });
     }
 
     try {
-        const result = await pool.query("SELECT * FROM qr_codes WHERE serial_number = $1", [serialNumber]);
-
-        if (result.rows.length === 0) {
-            return res.json({ message: "QR Code not found!" });
-        }
-
-        if (result.rows[0].scanned) {
-            return res.json({ message: "QR Code already scanned!" });
-        }
-
-        await pool.query(
-            "UPDATE qr_codes SET scanned = TRUE, scanned_at = NOW() WHERE serial_number = $1",
+        // Check if QR code exists
+        const qrCheck = await pool.query(
+            "SELECT * FROM qr_codes WHERE serial_number = $1", 
             [serialNumber]
         );
 
-        return res.json({ message: "QR Code scanned successfully!" });
+        if (qrCheck.rows.length === 0) {
+            return res.json({ message: "QR Code not found!" });
+        }
+
+        // Check if this user already scanned this QR code
+        const userScanCheck = await pool.query(
+            `SELECT * FROM user_qr_scans 
+             WHERE phone_number = $1 AND serial_number = $2`,
+            [phone, serialNumber]
+        );
+
+        if (userScanCheck.rows.length > 0) {
+            return res.json({ 
+                message: "You have already scanned this QR code!",
+                duplicate: true
+            });
+        }
+
+        // Record the scan
+        await pool.query(
+            `INSERT INTO user_qr_scans (phone_number, serial_number, scanned_at)
+             VALUES ($1, $2, NOW())`,
+            [phone, serialNumber]
+        );
+
+        // Update the QR code status
+        await pool.query(
+            "UPDATE qr_codes SET scanned = TRUE WHERE serial_number = $1",
+            [serialNumber]
+        );
+
+        return res.json({ 
+            message: "QR Code scanned successfully!",
+            success: true
+        });
 
     } catch (error) {
         console.error("Database error:", error);
@@ -95,7 +119,35 @@ app.post("/scan-qr", async (req, res) => {
     }
 });
 
-// Start the server
+// Get all scanned QR codes for a user
+app.post("/get-user-scans", async (req, res) => {
+    const { phone } = req.body;
+
+    if (!phone) {
+        return res.status(400).json({ message: "Phone number is required!" });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT serial_number, scanned_at 
+             FROM user_qr_scans 
+             WHERE phone_number = $1 
+             ORDER BY scanned_at DESC`,
+            [phone]
+        );
+
+        return res.json({
+            success: true,
+            scans: result.rows,
+            count: result.rows.length
+        });
+
+    } catch (error) {
+        console.error("Database error:", error);
+        return res.status(500).json({ message: "Database error", error });
+    }
+});
+
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
