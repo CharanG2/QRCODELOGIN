@@ -1,6 +1,3 @@
-
-//const BACKEND_URL = "https://qrcodelogin.onrender.com"; // Cloud Backend URL
-
 let scanner;
 
 // ✅ Send OTP Button Click
@@ -14,7 +11,7 @@ document.getElementById("sendOtpBtn").addEventListener("click", function () {
         return;
     }
 
-    fetch(`${BACKEND_URL}/send-otp`, {
+    fetch("https://qrcodelogin.onrender.com/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone })
@@ -33,7 +30,7 @@ document.getElementById("verifyOtpBtn").addEventListener("click", function () {
     let otpInput = document.getElementById("otpInput").value;
     let scanBtn = document.getElementById("scanQR");
 
-    fetch(`${BACKEND_URL}/verify-otp`, {
+    fetch("https://qrcodelogin.onrender.com/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp: otpInput })
@@ -56,44 +53,21 @@ document.getElementById("scanQR").addEventListener("click", function () {
         scanner.clear();
         scanner = null;
 
-<<<<<<< HEAD
-        // Send scanned serial number to backend
-        fetch("https://qrcodelogin-main-5j9v.onrender.com/fetch-user-details", {
-=======
         let phoneNumber = document.getElementById("phone").value;
-        fetch(`${BACKEND_URL}/scan-qr`, {
->>>>>>> 1c56fcd (first commit)
+        
+        fetch("https://qrcodelogin.onrender.com/fetch-user-details", {  // ✅ Fixed the API endpoint
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ serialNumber: decodedText, phone: phoneNumber })
         })
         .then(res => res.json())
-        .then(data => alert(data.message))
+        .then(data => {
+            alert(data.message);
+
+            if (data.expired) {
+                alert("⚠️ This QR Code has already been used!");
+            }
+        })
         .catch(err => console.error("❌ Error storing scan:", err));
     });
 });
-<<<<<<< HEAD
-
-// Download PDF when the button is clicked
-document.getElementById("downloadPDF").addEventListener("click", function () {
-    let userId = this.getAttribute("data-user-id");
-
-    fetch(`https://qrcodelogin-main-5j9v.onrender.com/download-pdf?userId=${userId}`, {
-        method: "GET"
-    })
-    .then(response => response.blob())
-    .then(blob => {
-        let link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "UserDetails.pdf";
-        link.click();
-    })
-    .catch(error => {
-        console.error("Error downloading PDF:", error);
-        alert("Failed to download the PDF.");
-    });
-});
-
-
-=======
->>>>>>> 1c56fcd (first commit)
