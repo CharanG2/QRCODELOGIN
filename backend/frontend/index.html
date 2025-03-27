@@ -5,19 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Login</title>
     <link rel="stylesheet" href="styles.css">
-    
-    <script src="https://unpkg.com/html5-qrcode"></script> <!-- QR Scanner Library -->
-    <style>
-        input, button {
-            margin-bottom: 10px;
-        }
-    </style>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
-    
     <div class="container">
         <img src="NimbleLogo.png" class="logo" alt="Company Logo">
-        
         <h2>QR Code Login</h2>
 
         <!-- Phone Input and Send OTP -->
@@ -28,11 +20,13 @@
 
         <!-- OTP Section (Initially Hidden) -->
         <div id="otpSection" style="display: none;">
-            <p id="otpDisplay"></p> <!-- OTP Display -->
+            <p id="otpDisplay"></p>
             <label for="otp" id="otpLabel">Enter OTP:</label>
             <input type="text" id="otp" placeholder="Enter OTP">
+            <div id="otpTimer"></div>
             <br>
             <button id="verifyOTP">Verify OTP</button>
+            <button id="resendOTP" style="display: none;">Resend OTP</button>
         </div>
 
         <!-- QR Scanner Section (Initially Hidden) -->
@@ -43,135 +37,158 @@
         </div>
     </div>
 
-   <script>
-    let scanner; // Scanner instance
-    let otpTimer; // Timer variable
-    let timeLeft = 30; // 30 seconds countdown
+    <script>
+        let scanner;
+        let otpTimer;
+        let timeLeft = 30;
+        let attemptCount = 0;
+        const MAX_ATTEMPTS = 3;
 
-    // Send OTP Functionality
-    document.getElementById("sendOTP").addEventListener("click", function() {
-        let phone = document.getElementById("phone").value;
+        // Send OTP Functionality
+        document.getElementById("sendOTP").addEventListener("click", sendOTP);
 
-        // Validate phone number
-        if (phone.length !== 10 || !/^\d+$/.test(phone)) {
-            alert("Please enter a valid 10-digit phone number.");
-            return;
-        }
-
-        fetch("https://qrcodelogin-9741.onrender.com/send-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phone })
-        })
-        .then(res => res.json())
-        .then(data => {
-            // Show OTP section
-            document.getElementById("otpSection").style.display = "block";
-            document.getElementById("otpDisplay").innerText = "Your OTP: " + data.otp;
-            
-            // Hide phone input
-            document.getElementById("phone").style.display = "none";
-            document.getElementById("sendOTP").style.display = "none";
-            document.getElementById("phoneLabel").style.display = "none";
-
-            // Start the countdown timer
-            startOtpTimer();
-        })
-        .catch(error => {
-            console.error("Error sending OTP:", error);
-            alert("Failed to send OTP. Try again.");
-        });
-    });
-
-    // Timer function
-    function startOtpTimer() {
-        timeLeft = 30; // Reset to 30 seconds
-        document.getElementById("otpTimer").innerText = `Time remaining: ${timeLeft} seconds`;
-        
-        otpTimer = setInterval(() => {
-            timeLeft--;
-            document.getElementById("otpTimer").innerText = `Time remaining: ${timeLeft} seconds`;
-            
-            if (timeLeft <= 0) {
-                clearInterval(otpTimer);
-                document.getElementById("otpDisplay").innerText = "Your OTP has expired. Please try again later.";
-                document.getElementById("otp").disabled = true;
-                document.getElementById("verifyOTP").disabled = true;
-                
-                // Show alert message
-                setTimeout(() => {
-                    alert("OTP expired. Please request a new OTP.");
-                }, 500);
+        // Resend OTP Functionality
+        document.getElementById("resendOTP").addEventListener("click", function() {
+            if (attemptCount >= MAX_ATTEMPTS) {
+                alert("Maximum attempts reached. Please try again later.");
+                return;
             }
-        }, 1000);
-    }
-
-    // Verify OTP Functionality
-    document.getElementById("verifyOTP").addEventListener("click", function() {
-        let phone = document.getElementById("phone").value;
-        let otp = document.getElementById("otp").value;
-
-        // Clear the timer if OTP is being verified
-        clearInterval(otpTimer);
-
-        fetch("https://qrcodelogin-9741.onrender.com/verify-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phone, otp })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById("qrSection").style.display = "block";
-                document.getElementById("otpDisplay").style.display = "none";
-                document.getElementById("otp").style.display = "none";
-                document.getElementById("verifyOTP").style.display = "none";
-                document.getElementById("otpLabel").style.display = "none";
-                document.getElementById("otpTimer").style.display = "none";
-            } else {
-                alert("Invalid OTP!");
-                // Restart the timer if OTP is wrong
-                startOtpTimer();
-            }
-        })
-        .catch(error => {
-            console.error("Error verifying OTP:", error);
-            alert("OTP verification failed.");
-            // Restart the timer on error
-            startOtpTimer();
+            sendOTP();
         });
-    });
 
-    // Scan QR Code Functionality (unchanged)
-    document.getElementById("scanQR").addEventListener("click", function() {
-        if (!scanner) {
-            scanner = new Html5QrcodeScanner("qr-video", { fps: 10, qrbox: 250 });
-        }
+        function sendOTP() {
+            let phone = document.getElementById("phone").value;
+            
+            if (!/^\d{10}$/.test(phone)) {
+                alert("Please enter a valid 10-digit phone number.");
+                return;
+            }
 
-        scanner.render((decodedText) => {
-            console.log("Scanned QR Code:", decodedText);
-            scanner.clear(); // Stop scanner
-            scanner = null;
-
-            fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
+            fetch("https://qrcodelogin-9741.onrender.com/send-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ serialNumber: decodedText })
+                body: JSON.stringify({ phone })
             })
             .then(res => res.json())
             .then(data => {
-                document.getElementById("scanMessage").innerText = data.message;
-                document.getElementById("scanQR").style.display = "none";
-                document.getElementById("qr-video").style.display = "none";
+                attemptCount++;
+                document.getElementById("otpSection").style.display = "block";
+                document.getElementById("otpDisplay").innerText = "Your OTP: " + data.otp;
+                document.getElementById("resendOTP").style.display = "none";
+
+                document.getElementById("phone").style.display = "none";
+                document.getElementById("sendOTP").style.display = "none";
+                document.getElementById("phoneLabel").style.display = "none";
+
+                document.getElementById("otp").value = "";
+                document.getElementById("otp").disabled = false;
+                document.getElementById("verifyOTP").disabled = false;
+
+                startTimer();
             })
             .catch(error => {
-                console.error("Error scanning QR Code:", error);
-                alert("Failed to scan QR Code. Please try again.");
+                console.error("Error sending OTP:", error);
+                alert("Failed to send OTP. Try again.");
             });
-        }, (errorMessage) => {
-            console.error("QR Scanner Error:", errorMessage);
+        }
+
+        function startTimer() {
+            clearInterval(otpTimer);
+            timeLeft = 30;
+            updateTimerDisplay();
+
+            otpTimer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(otpTimer);
+                    document.getElementById("otp").disabled = true;
+                    document.getElementById("verifyOTP").disabled = true;
+                    document.getElementById("otpDisplay").innerText = "OTP expired. Please request a new one.";
+                    document.getElementById("resendOTP").style.display = "inline";
+                    
+                    if (attemptCount >= MAX_ATTEMPTS) {
+                        document.getElementById("resendOTP").disabled = true;
+                        document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById("otpTimer").innerText = `Time remaining: ${timeLeft} seconds`;
+        }
+
+        // Verify OTP Functionality
+        document.getElementById("verifyOTP").addEventListener("click", function() {
+            let phone = document.getElementById("phone").value;
+            let otp = document.getElementById("otp").value;
+
+            if (!otp) {
+                alert("Please enter the OTP");
+                return;
+            }
+
+            fetch("https://qrcodelogin-9741.onrender.com/verify-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone, otp })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    clearInterval(otpTimer);
+                    document.getElementById("qrSection").style.display = "block";
+                    document.getElementById("otpSection").style.display = "none";
+                    attemptCount = 0;
+                } else {
+                    alert("Invalid OTP!");
+                    if (attemptCount >= MAX_ATTEMPTS) {
+                        document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
+                        document.getElementById("otp").disabled = true;
+                        document.getElementById("verifyOTP").disabled = true;
+                        document.getElementById("resendOTP").disabled = true;
+                        clearInterval(otpTimer);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Error verifying OTP:", error);
+                alert("OTP verification failed.");
+            });
         });
-    });
-</script>
+
+        // Scan QR Code Functionality (unchanged)
+        document.getElementById("scanQR").addEventListener("click", function() {
+            if (!scanner) {
+                scanner = new Html5QrcodeScanner("qr-video", { fps: 10, qrbox: 250 });
+            }
+
+            scanner.render((decodedText) => {
+                console.log("Scanned QR Code:", decodedText);
+                scanner.clear();
+                scanner = null;
+
+                fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ serialNumber: decodedText })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("scanMessage").innerText = data.message;
+                    document.getElementById("scanQR").style.display = "none";
+                    document.getElementById("qr-video").style.display = "none";
+                })
+                .catch(error => {
+                    console.error("Error scanning QR Code:", error);
+                    alert("Failed to scan QR Code. Please try again.");
+                });
+            }, (errorMessage) => {
+                console.error("QR Scanner Error:", errorMessage);
+            });
+        });
+    </script>
 </body>
 </html>
