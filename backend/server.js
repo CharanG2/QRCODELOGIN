@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const { Pool } = require("pg");
 
 const app = express();
-app.use(cors({ origin: "*" })); // Adjust origin as needed
+app.use(cors({ origin: "*" }));
 app.use(bodyParser.json());
 
 // PostgreSQL Database Connection
@@ -51,7 +51,10 @@ app.post("/verify-otp", (req, res) => {
 app.post("/scan-qr", async (req, res) => {
     const { serialNumber, phone } = req.body;
     if (!serialNumber || !phone) {
-        return res.status(400).json({ message: "Serial number and phone number are required!" });
+        return res.status(400).json({ 
+            success: false,
+            message: "Serial number and phone number are required!" 
+        });
     }
 
     try {
@@ -62,72 +65,71 @@ app.post("/scan-qr", async (req, res) => {
         );
 
         if (qrCheck.rows.length === 0) {
-            return res.json({ message: "QR Code not found!" });
+            return res.json({ 
+                success: false,
+                message: "Invalid QR Code!" 
+            });
         }
 
         // Check if this user already scanned this QR code
         const userScanCheck = await pool.query(
-            `SELECT * FROM user_qr_scans 
-             WHERE phone_number = $1 AND serial_number = $2`,
-            [phone, serialNumber]
+            `SELECT * FROM qr_codes 
+             WHERE serial_number = $1 AND scanned_by = $2`,
+            [serialNumber, phone]
         );
 
         if (userScanCheck.rows.length > 0) {
             return res.json({ 
+                success: false,
                 message: "You have already scanned this QR code!",
                 duplicate: true
             });
         }
 
-        // Record the scan in both tables
-        await pool.query('BEGIN');
-        
-        // Update qr_codes table
+        // Update the QR code record
         await pool.query(
             `UPDATE qr_codes 
              SET scanned = TRUE, scanned_by = $1, scan_timestamp = NOW() 
              WHERE serial_number = $2`,
             [phone, serialNumber]
         );
-        
-        // Add to user_qr_scans table
-        await pool.query(
-            `INSERT INTO user_qr_scans (phone_number, serial_number, scanned_at)
-             VALUES ($1, $2, NOW())`,
-            [phone, serialNumber]
-        );
-        
-        await pool.query('COMMIT');
 
         return res.json({ 
-            message: "QR Code scanned successfully!",
-            success: true
+            success: true,
+            message: "QR Code scanned successfully!" 
         });
 
     } catch (error) {
-        await pool.query('ROLLBACK');
         console.error("Database error:", error);
         
         if (error.code === '23505') { // Unique violation
-            return res.json({ message: "This QR code was already scanned by you!" });
+            return res.json({ 
+                success: false,
+                message: "This QR code was already scanned by you!" 
+            });
         }
         
-        return res.status(500).json({ message: "Database error", error });
+        return res.status(500).json({ 
+            success: false,
+            message: "Database error" 
+        });
     }
 });
 
 // Get all scanned QR codes for a user
 app.post("/get-user-scans", async (req, res) => {
     const { phone } = req.body;
-    if (!phone) return res.status(400).json({ message: "Phone number is required!" });
+    if (!phone) return res.status(400).json({ 
+        success: false,
+        message: "Phone number is required!" 
+    });
 
     try {
         const result = await pool.query(
-            `SELECT q.serial_number, u.scanned_at 
-             FROM user_qr_scans u
-             JOIN qr_codes q ON u.serial_number = q.serial_number
-             WHERE u.phone_number = $1 
-             ORDER BY u.scanned_at DESC`,
+            `SELECT serial_number, scan_timestamp as scanned_at 
+             FROM qr_codes 
+             WHERE scanned_by = $1 
+             ORDER BY scan_timestamp DESC`,
             [phone]
         );
 
@@ -139,27 +141,10 @@ app.post("/get-user-scans", async (req, res) => {
 
     } catch (error) {
         console.error("Database error:", error);
-        return res.status(500).json({ message: "Database error", error });
-    }
-});
-
-// Add new QR codes (admin endpoint)
-app.post("/add-qr-code", async (req, res) => {
-    const { serialNumber } = req.body;
-    if (!serialNumber) return res.status(400).json({ message: "Serial number is required!" });
-
-    try {
-        await pool.query(
-            "INSERT INTO qr_codes (serial_number) VALUES ($1)",
-            [serialNumber]
-        );
-        return res.json({ success: true, message: "QR Code added successfully!" });
-    } catch (error) {
-        if (error.code === '23505') {
-            return res.status(400).json({ message: "This QR code already exists!" });
-        }
-        console.error("Database error:", error);
-        return res.status(500).json({ message: "Database error", error });
+        return res.status(500).json({ 
+            success: false,
+            message: "Database error" 
+        });
     }
 });
 
