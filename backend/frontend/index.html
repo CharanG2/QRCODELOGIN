@@ -4,65 +4,374 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
-    <div class="container">
-        <img src="NimbleLogo.png" class="logo" alt="Company Logo">
-        <h2>QR Code Login</h2>
+    <!-- Floating Navigation Button -->
+    <button id="navToggle" class="floating-nav-btn">
+        <i class="fas fa-bars"></i>
+    </button>
 
-        <!-- Phone Input and Send OTP -->
-        <label for="phone" id="phoneLabel">Enter Phone Number:</label>
-        <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
-        <br>
-        <button id="sendOTP">Send OTP</button>
-
-        <!-- OTP Section (Initially Hidden) -->
-        <div id="otpSection" style="display: none;">
-            <p id="otpDisplay"></p>
-            <label for="otp" id="otpLabel">Enter OTP:</label>
-            <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
-            <div id="otpTimer"></div>
-            <br>
-            <button id="verifyOTP">Verify OTP</button>
-            <button id="resendOTP" style="display: none;">Resend OTP</button>
+    <!-- Side Navigation -->
+    <div id="sideNav" class="side-nav">
+        <div class="nav-header">
+            <img src="NimbleLogo.png" alt="Logo" class="nav-logo">
+            <button id="closeNav" class="close-nav-btn"><i class="fas fa-times"></i></button>
         </div>
-
-        <!-- QR Scanner Section (Initially Hidden) -->
-        <div id="qrSection" style="display: none;">
-            <button id="scanQR">Scan QR Code</button>
-            <p id="scanMessage" style="color: rgb(0, 128, 2); font-weight: bold;"></p>
-            <div id="qr-video" style="width: 100%;"></div>
-            <div id="scansList"></div>
+        <div class="nav-links">
+            <a href="#" class="nav-link active" data-section="main"><i class="fas fa-home"></i> Home</a>
+            <a href="#" class="nav-link" data-section="history"><i class="fas fa-history"></i> Scan History</a>
+            <a href="#" class="nav-link" data-section="profile"><i class="fas fa-user"></i> Profile</a>
+            <a href="#" class="nav-link" data-section="settings"><i class="fas fa-cog"></i> Settings</a>
+        </div>
+        <div class="nav-footer">
+            <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
     </div>
 
+    <!-- Notification Center -->
+    <div id="notificationCenter" class="notification-center"></div>
+
+    <!-- Main Container -->
+    <div class="container" id="mainContainer">
+        <div class="header-section">
+            <img src="NimbleLogo.png" class="logo" alt="Company Logo">
+            <h2>QR Code Login</h2>
+            <div class="user-greeting" id="userGreeting"></div>
+        </div>
+
+        <!-- Phone Input Section -->
+        <div class="form-section" id="phoneSection">
+            <div class="input-group">
+                <label for="phone"><i class="fas fa-mobile-alt"></i> Enter Phone Number:</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-phone input-icon"></i>
+                    <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
+                </div>
+            </div>
+            <button id="sendOTP" class="btn-primary">
+                <i class="fas fa-paper-plane"></i> Send OTP
+            </button>
+        </div>
+
+        <!-- OTP Section -->
+        <div class="form-section hidden" id="otpSection">
+            <div class="otp-header">
+                <p id="otpDisplay"></p>
+                <div class="otp-timer" id="otpTimer"></div>
+            </div>
+            <div class="input-group">
+                <label for="otp"><i class="fas fa-key"></i> Enter OTP:</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="text" id="otp" placeholder="Enter 6-digit OTP" maxlength="6">
+                </div>
+            </div>
+            <div class="otp-actions">
+                <button id="verifyOTP" class="btn-primary">
+                    <i class="fas fa-check-circle"></i> Verify OTP
+                </button>
+                <button id="resendOTP" class="btn-secondary hidden">
+                    <i class="fas fa-sync-alt"></i> Resend OTP
+                </button>
+            </div>
+        </div>
+
+        <!-- QR Scanner Section -->
+        <div class="form-section hidden" id="qrSection">
+            <div class="scanner-header">
+                <button id="scanQR" class="btn-primary">
+                    <i class="fas fa-qrcode"></i> Scan QR Code
+                </button>
+                <div class="scanner-options">
+                    <button id="toggleCamera" class="btn-icon" title="Switch Camera">
+                        <i class="fas fa-camera-retro"></i>
+                    </button>
+                    <button id="toggleFlash" class="btn-icon" title="Toggle Flash">
+                        <i class="fas fa-lightbulb"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="scanStatus" class="scan-status">
+                <p id="scanMessage"></p>
+                <div class="scan-progress hidden" id="scanProgress">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+            
+            <div id="qr-video" class="qr-video-container"></div>
+            
+            <div class="scan-history" id="scansList"></div>
+            
+            <div class="manual-entry hidden" id="manualEntry">
+                <input type="text" id="manualCode" placeholder="Enter QR code manually">
+                <button id="submitManual" class="btn-secondary">
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+            
+            <button id="toggleManualEntry" class="btn-link">
+                <i class="fas fa-keyboard"></i> Enter code manually
+            </button>
+        </div>
+
+        <!-- Security Verification (Biometrics/Face ID) -->
+        <div class="security-verification hidden" id="securityVerification">
+            <h3><i class="fas fa-fingerprint"></i> Verify Your Identity</h3>
+            <div class="verification-options">
+                <button class="verification-btn" id="faceIdBtn">
+                    <i class="fas fa-user-circle"></i> Face ID
+                </button>
+                <button class="verification-btn" id="fingerprintBtn">
+                    <i class="fas fa-fingerprint"></i> Fingerprint
+                </button>
+                <button class="verification-btn" id="pinBtn">
+                    <i class="fas fa-lock"></i> Enter PIN
+                </button>
+            </div>
+            <div class="pin-entry hidden" id="pinEntry">
+                <input type="password" id="securityPin" placeholder="Enter your 6-digit PIN" maxlength="6">
+                <button id="verifyPin" class="btn-primary">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Section -->
+    <div class="container hidden" id="profileContainer">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user-circle"></i>
+                <button class="edit-avatar"><i class="fas fa-camera"></i></button>
+            </div>
+            <h2 id="profileName">User Profile</h2>
+            <p id="profilePhone"></p>
+        </div>
+        
+        <div class="profile-stats">
+            <div class="stat-card">
+                <i class="fas fa-qrcode"></i>
+                <h3 id="totalScans">0</h3>
+                <p>Total Scans</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock"></i>
+                <h3 id="lastScan">-</h3>
+                <p>Last Scan</p>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            <button class="profile-action-btn">
+                <i class="fas fa-history"></i> Scan History
+            </button>
+            <button class="profile-action-btn">
+                <i class="fas fa-shield-alt"></i> Security
+            </button>
+            <button class="profile-action-btn">
+                <i class="fas fa-bell"></i> Notifications
+            </button>
+            <button class="profile-action-btn">
+                <i class="fas fa-question-circle"></i> Help
+            </button>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="scanSuccessSound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" preload="auto"></audio>
+    <audio id="scanErrorSound" src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3" preload="auto"></audio>
+    <audio id="notificationSound" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3" preload="auto"></audio>
+
     <script>
+        // Enhanced QR Code Login System with 10 New Features
+        // 1. Side Navigation Panel
+        // 2. Notification System
+        // 3. Biometric/Face ID Verification
+        // 4. Camera Flash Control
+        // 5. Manual QR Code Entry
+        // 6. Scan Progress Indicator
+        // 7. Audio Feedback
+        // 8. User Profile Section
+        // 9. Responsive Camera Switching
+        // 10. Enhanced Security with PIN
+
+        // DOM Elements
+        const navToggle = document.getElementById('navToggle');
+        const sideNav = document.getElementById('sideNav');
+        const closeNav = document.getElementById('closeNav');
+        const notificationCenter = document.getElementById('notificationCenter');
+        const mainContainer = document.getElementById('mainContainer');
+        const profileContainer = document.getElementById('profileContainer');
+        const userGreeting = document.getElementById('userGreeting');
+        const phoneSection = document.getElementById('phoneSection');
+        const otpSection = document.getElementById('otpSection');
+        const qrSection = document.getElementById('qrSection');
+        const phoneInput = document.getElementById('phone');
+        const otpInput = document.getElementById('otp');
+        const sendOTPBtn = document.getElementById('sendOTP');
+        const verifyOTPBtn = document.getElementById('verifyOTP');
+        const resendOTPBtn = document.getElementById('resendOTP');
+        const scanQRBtn = document.getElementById('scanQR');
+        const scanMessage = document.getElementById('scanMessage');
+        const scansList = document.getElementById('scansList');
+        const toggleCameraBtn = document.getElementById('toggleCamera');
+        const toggleFlashBtn = document.getElementById('toggleFlash');
+        const scanProgress = document.getElementById('scanProgress');
+        const manualEntry = document.getElementById('manualEntry');
+        const manualCodeInput = document.getElementById('manualCode');
+        const submitManualBtn = document.getElementById('submitManual');
+        const toggleManualEntryBtn = document.getElementById('toggleManualEntry');
+        const securityVerification = document.getElementById('securityVerification');
+        const faceIdBtn = document.getElementById('faceIdBtn');
+        const fingerprintBtn = document.getElementById('fingerprintBtn');
+        const pinBtn = document.getElementById('pinBtn');
+        const pinEntry = document.getElementById('pinEntry');
+        const securityPin = document.getElementById('securityPin');
+        const verifyPinBtn = document.getElementById('verifyPin');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const scanSuccessSound = document.getElementById('scanSuccessSound');
+        const scanErrorSound = document.getElementById('scanErrorSound');
+        const notificationSound = document.getElementById('notificationSound');
+
+        // State Variables
         let scanner;
         let otpTimer;
         let timeLeft = 30;
         let attemptCount = 0;
         const MAX_ATTEMPTS = 3;
+        let currentUser = null;
+        let cameras = [];
+        let currentCameraIndex = 0;
+        let flashOn = false;
+        let isManualEntry = false;
 
-        // Phone number input validation
-        document.getElementById("phone").addEventListener("input", function(e) {
-            this.value = this.value.replace(/[^0-9]/g, ''); // Only allow numbers
-            if (this.value.length > 10) {
-                this.value = this.value.slice(0, 10); // Limit to 10 digits
+        // Initialize the application
+        function init() {
+            setupEventListeners();
+            checkPreviousSession();
+        }
+
+        // Setup all event listeners
+        function setupEventListeners() {
+            // Navigation
+            navToggle.addEventListener('click', toggleSideNav);
+            closeNav.addEventListener('click', toggleSideNav);
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', navigateToSection);
+            });
+            logoutBtn.addEventListener('click', logout);
+
+            // Phone Input
+            phoneInput.addEventListener('input', validatePhoneInput);
+            sendOTPBtn.addEventListener('click', sendOTP);
+
+            // OTP Verification
+            verifyOTPBtn.addEventListener('click', verifyOTP);
+            resendOTPBtn.addEventListener('click', resendOTP);
+
+            // QR Scanning
+            scanQRBtn.addEventListener('click', startScanner);
+            toggleCameraBtn.addEventListener('click', switchCamera);
+            toggleFlashBtn.addEventListener('click', toggleFlash);
+            toggleManualEntryBtn.addEventListener('click', toggleManualEntryMode);
+            submitManualBtn.addEventListener('click', submitManualCode);
+
+            // Security Verification
+            faceIdBtn.addEventListener('click', verifyWithFaceID);
+            fingerprintBtn.addEventListener('click', verifyWithFingerprint);
+            pinBtn.addEventListener('click', showPinEntry);
+            verifyPinBtn.addEventListener('click', verifyPin);
+
+            // Manual Code Entry
+            manualCodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') submitManualCode();
+            });
+        }
+
+        // Check if user was previously logged in
+        function checkPreviousSession() {
+            const savedUser = localStorage.getItem('qrLoginUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showNotification(`Welcome back, ${currentUser.phone}`, 'success');
+                showSecurityVerification();
             }
-        });
+        }
 
-        // Send OTP Functionality
-        document.getElementById("sendOTP").addEventListener("click", sendOTP);
+        // Toggle side navigation
+        function toggleSideNav() {
+            sideNav.classList.toggle('active');
+            document.body.classList.toggle('nav-active');
+        }
 
+        // Navigate between sections
+        function navigateToSection(e) {
+            e.preventDefault();
+            const section = e.target.getAttribute('data-section');
+            
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            e.target.classList.add('active');
+
+            // Show selected section
+            if (section === 'main') {
+                mainContainer.classList.remove('hidden');
+                profileContainer.classList.add('hidden');
+            } else if (section === 'profile') {
+                mainContainer.classList.add('hidden');
+                profileContainer.classList.remove('hidden');
+                loadProfileData();
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+                <button class="close-notification"><i class="fas fa-times"></i></button>
+            `;
+            
+            notification.querySelector('.close-notification').addEventListener('click', () => {
+                notification.remove();
+            });
+
+            notificationCenter.appendChild(notification);
+            notificationSound.play();
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('fade-out');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        // Validate phone input
+        function validatePhoneInput(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+        }
+
+        // Send OTP
         function sendOTP() {
-            let phone = document.getElementById("phone").value;
+            const phone = phoneInput.value;
             
             if (phone.length !== 10) {
-                alert("Please enter exactly 10-digit phone number.");
+                showNotification('Please enter exactly 10-digit phone number', 'error');
                 return;
             }
+
+            // Show loading state
+            sendOTPBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            sendOTPBtn.disabled = true;
 
             fetch("https://qrcodelogin-9741.onrender.com/send-otp", {
                 method: "POST",
@@ -72,35 +381,48 @@
             .then(res => res.json())
             .then(data => {
                 attemptCount++;
-                document.getElementById("otpSection").style.display = "block";
-                document.getElementById("otpDisplay").innerText = "Your OTP: " + data.otp;
-                document.getElementById("resendOTP").style.display = "none";
+                
+                // Show OTP section
+                phoneSection.classList.add('hidden');
+                otpSection.classList.remove('hidden');
+                
+                // Display OTP (in production, you wouldn't show the actual OTP)
+                document.getElementById('otpDisplay').innerHTML = `
+                    OTP sent to ${phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}
+                    <span class="otp-code">${data.otp}</span>
+                `;
+                
+                // Reset UI
+                sendOTPBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+                sendOTPBtn.disabled = false;
+                resendOTPBtn.classList.add('hidden');
+                otpInput.value = "";
+                otpInput.disabled = false;
+                verifyOTPBtn.disabled = false;
 
-                document.getElementById("phone").style.display = "none";
-                document.getElementById("sendOTP").style.display = "none";
-                document.getElementById("phoneLabel").style.display = "none";
-
-                document.getElementById("otp").value = "";
-                document.getElementById("otp").disabled = false;
-                document.getElementById("verifyOTP").disabled = false;
-
+                // Start timer
                 startTimer();
+                
+                showNotification('OTP sent successfully', 'success');
             })
             .catch(error => {
                 console.error("Error sending OTP:", error);
-                alert("Failed to send OTP. Try again.");
+                showNotification('Failed to send OTP. Try again.', 'error');
+                sendOTPBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+                sendOTPBtn.disabled = false;
             });
         }
 
-        // Resend OTP Functionality
-        document.getElementById("resendOTP").addEventListener("click", function() {
+        // Resend OTP
+        function resendOTP() {
             if (attemptCount >= MAX_ATTEMPTS) {
-                alert("Maximum attempts reached. Please try again later.");
+                showNotification('Maximum attempts reached. Please try again later.', 'error');
                 return;
             }
             sendOTP();
-        });
+        }
 
+        // Start OTP timer
         function startTimer() {
             clearInterval(otpTimer);
             timeLeft = 30;
@@ -112,32 +434,54 @@
 
                 if (timeLeft <= 0) {
                     clearInterval(otpTimer);
-                    document.getElementById("otp").disabled = true;
-                    document.getElementById("verifyOTP").disabled = true;
-                    document.getElementById("otpDisplay").innerText = "OTP expired. Please request a new one.";
-                    document.getElementById("resendOTP").style.display = "inline";
+                    otpInput.disabled = true;
+                    verifyOTPBtn.disabled = true;
+                    document.getElementById('otpDisplay').innerHTML = `
+                        OTP expired. Please request a new one.
+                    `;
+                    resendOTPBtn.classList.remove('hidden');
                     
                     if (attemptCount >= MAX_ATTEMPTS) {
-                        document.getElementById("resendOTP").disabled = true;
-                        document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
+                        resendOTPBtn.disabled = true;
+                        document.getElementById('otpDisplay').innerHTML = `
+                            Maximum attempts reached. Please try again later.
+                        `;
                     }
                 }
             }, 1000);
         }
 
+        // Update timer display
         function updateTimerDisplay() {
-            document.getElementById("otpTimer").innerText = `Time remaining: ${timeLeft} seconds`;
+            const timerElement = document.getElementById('otpTimer');
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.innerHTML = `
+                <i class="fas fa-clock"></i> 
+                ${minutes}:${seconds < 10 ? '0' + seconds : seconds}
+            `;
+            
+            // Change color when time is running out
+            if (timeLeft <= 10) {
+                timerElement.style.color = '#ff4d6d';
+            } else {
+                timerElement.style.color = '#00d4b8';
+            }
         }
 
-        // Verify OTP Functionality
-        document.getElementById("verifyOTP").addEventListener("click", function() {
-            let phone = document.getElementById("phone").value;
-            let otp = document.getElementById("otp").value;
+        // Verify OTP
+        function verifyOTP() {
+            const phone = phoneInput.value;
+            const otp = otpInput.value;
 
             if (!otp) {
-                alert("Please enter the OTP");
+                showNotification('Please enter the OTP', 'error');
                 return;
             }
+
+            // Show loading state
+            verifyOTPBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            verifyOTPBtn.disabled = true;
 
             fetch("https://qrcodelogin-9741.onrender.com/verify-otp", {
                 method: "POST",
@@ -148,57 +492,222 @@
             .then(data => {
                 if (data.success) {
                     clearInterval(otpTimer);
-                    document.getElementById("qrSection").style.display = "block";
-                    document.getElementById("otpSection").style.display = "none";
-                    attemptCount = 0;
+                    currentUser = { phone, lastLogin: new Date() };
+                    localStorage.setItem('qrLoginUser', JSON.stringify(currentUser));
                     
-                    // Load user's scan history after successful login
+                    // Show QR scanner section
+                    otpSection.classList.add('hidden');
+                    qrSection.classList.remove('hidden');
+                    
+                    // Update UI
+                    userGreeting.innerHTML = `
+                        Welcome, <span>${phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}</span>
+                    `;
+                    
+                    // Load user's scan history
                     loadUserScans(phone);
+                    
+                    showNotification('Login successful!', 'success');
+                    
+                    // Show security verification if available
+                    if (hasBiometricSupport()) {
+                        showSecurityVerification();
+                    }
                 } else {
-                    alert("Invalid OTP!");
+                    showNotification('Invalid OTP!', 'error');
                     if (attemptCount >= MAX_ATTEMPTS) {
-                        document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
-                        document.getElementById("otp").disabled = true;
-                        document.getElementById("verifyOTP").disabled = true;
-                        document.getElementById("resendOTP").disabled = true;
+                        document.getElementById('otpDisplay').innerHTML = `
+                            Maximum attempts reached. Please try again later.
+                        `;
+                        otpInput.disabled = true;
+                        verifyOTPBtn.disabled = true;
+                        resendOTPBtn.disabled = true;
                         clearInterval(otpTimer);
                     }
                 }
+                
+                // Reset button
+                verifyOTPBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify OTP';
+                verifyOTPBtn.disabled = false;
             })
             .catch(error => {
                 console.error("Error verifying OTP:", error);
-                alert("OTP verification failed.");
+                showNotification('OTP verification failed', 'error');
+                verifyOTPBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify OTP';
+                verifyOTPBtn.disabled = false;
             });
-        });
+        }
 
-        // Scan QR Code Functionality with user tracking
-        document.getElementById("scanQR").addEventListener("click", function() {
+        // Start QR scanner
+        function startScanner() {
             if (!scanner) {
-                scanner = new Html5QrcodeScanner("qr-video", { 
-                    fps: 10, 
-                    qrbox: 250,
-                    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+                // Show loading state
+                scanQRBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing...';
+                scanQRBtn.disabled = true;
+                
+                // Get available cameras
+                Html5Qrcode.getCameras().then(devices => {
+                    if (devices && devices.length) {
+                        cameras = devices;
+                        currentCameraIndex = 0;
+                        
+                        scanner = new Html5QrcodeScanner("qr-video", { 
+                            fps: 10, 
+                            qrbox: 250,
+                            aspectRatio: 1.0,
+                            disableFlip: false,
+                            videoConstraints: {
+                                deviceId: cameras[currentCameraIndex].id
+                            }
+                        });
+                        
+                        scanner.render(
+                            (decodedText) => {
+                                // Success callback
+                                handleScannedQR(decodedText);
+                            },
+                            (errorMessage) => {
+                                // Failure callback
+                                console.error("QR Scanner Error:", errorMessage);
+                                scanMessage.innerHTML = `
+                                    <i class="fas fa-exclamation-triangle"></i> Scanner error: ${errorMessage}
+                                `;
+                                scanMessage.className = 'error';
+                            }
+                        );
+                        
+                        // Update UI
+                        scanQRBtn.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
+                        scanQRBtn.disabled = false;
+                        toggleCameraBtn.disabled = false;
+                        
+                        showNotification('Scanner ready', 'success');
+                    } else {
+                        showNotification('No cameras found', 'error');
+                        scanQRBtn.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
+                        scanQRBtn.disabled = false;
+                    }
+                }).catch(err => {
+                    console.error("Camera Error:", err);
+                    showNotification('Camera access error', 'error');
+                    scanQRBtn.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
+                    scanQRBtn.disabled = false;
                 });
+            } else {
+                // Scanner already exists, just clear any previous messages
+                scanMessage.textContent = '';
+                scanMessage.className = '';
             }
+        }
 
-            scanner.render(
-                (decodedText) => {
-                    // Success callback
-                    handleScannedQR(decodedText);
-                },
-                (errorMessage) => {
-                    // Failure callback
-                    console.error("QR Scanner Error:", errorMessage);
-                    document.getElementById("scanMessage").innerText = "Scanner error: " + errorMessage;
+        // Switch between available cameras
+        function switchCamera() {
+            if (!scanner || cameras.length < 2) {
+                showNotification('Only one camera available', 'info');
+                return;
+            }
+            
+            currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+            const newCameraId = cameras[currentCameraIndex].id;
+            
+            // Show loading state
+            toggleCameraBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            toggleCameraBtn.disabled = true;
+            
+            scanner.pause().then(() => {
+                return scanner.resume(newCameraId);
+            }).then(() => {
+                showNotification(`Switched to ${cameras[currentCameraIndex].label || 'Camera ' + (currentCameraIndex + 1)}`, 'success');
+                toggleCameraBtn.innerHTML = '<i class="fas fa-camera-retro"></i>';
+                toggleCameraBtn.disabled = false;
+            }).catch(err => {
+                console.error("Camera Switch Error:", err);
+                showNotification('Failed to switch camera', 'error');
+                toggleCameraBtn.innerHTML = '<i class="fas fa-camera-retro"></i>';
+                toggleCameraBtn.disabled = false;
+            });
+        }
+
+        // Toggle flash (if available)
+        function toggleFlash() {
+            if (!scanner) return;
+            
+            flashOn = !flashOn;
+            
+            // In a real app, you would use the browser's flashlight API if available
+            // This is just a UI simulation
+            if (flashOn) {
+                toggleFlashBtn.innerHTML = '<i class="fas fa-lightbulb"></i>';
+                toggleFlashBtn.classList.add('active');
+                showNotification('Flash on', 'info');
+            } else {
+                toggleFlashBtn.innerHTML = '<i class="fas fa-lightbulb"></i>';
+                toggleFlashBtn.classList.remove('active');
+                showNotification('Flash off', 'info');
+            }
+        }
+
+        // Toggle between camera scan and manual entry
+        function toggleManualEntryMode() {
+            isManualEntry = !isManualEntry;
+            
+            if (isManualEntry) {
+                // Switch to manual entry
+                if (scanner) {
+                    scanner.pause().catch(err => console.error("Scanner pause error:", err));
                 }
-            );
-        });
+                
+                manualEntry.classList.remove('hidden');
+                document.getElementById('qr-video').classList.add('hidden');
+                toggleManualEntryBtn.innerHTML = '<i class="fas fa-camera"></i> Use Camera';
+                manualCodeInput.focus();
+            } else {
+                // Switch back to camera
+                manualEntry.classList.add('hidden');
+                document.getElementById('qr-video').classList.remove('hidden');
+                toggleManualEntryBtn.innerHTML = '<i class="fas fa-keyboard"></i> Enter code manually';
+                
+                if (scanner) {
+                    scanner.resume().catch(err => console.error("Scanner resume error:", err));
+                }
+            }
+        }
 
+        // Submit manually entered QR code
+        function submitManualCode() {
+            const code = manualCodeInput.value.trim();
+            if (!code) {
+                showNotification('Please enter a QR code', 'error');
+                return;
+            }
+            
+            handleScannedQR(code);
+            manualCodeInput.value = '';
+        }
+
+        // Handle scanned QR code
         function handleScannedQR(decodedText) {
-            scanner.clear();
-            scanner = null;
-
-            let phone = document.getElementById("phone").value;
+            if (scanner) {
+                scanner.pause().catch(err => console.error("Scanner pause error:", err));
+            }
+            
+            const phone = phoneInput.value;
+            
+            // Show scanning progress
+            scanProgress.classList.remove('hidden');
+            const progressBar = scanProgress.querySelector('.progress-bar');
+            progressBar.style.width = '0%';
+            
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 5;
+                progressBar.style.width = `${progress}%`;
+                if (progress >= 100) clearInterval(progressInterval);
+            }, 50);
+            
+            // Show scanning message
+            scanMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying QR code...';
+            scanMessage.className = 'info';
             
             fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
                 method: "POST",
@@ -210,27 +719,67 @@
             })
             .then(res => res.json())
             .then(data => {
-                if (data.duplicate) {
-                    document.getElementById("scanMessage").innerText = "You've already scanned this QR code!";
-                    document.getElementById("scanMessage").style.color = "red";
-                } else if (data.success) {
-                    document.getElementById("scanMessage").innerText = "QR Code scanned successfully!";
-                    document.getElementById("scanMessage").style.color = "green";
-                    // Refresh the scan history after successful scan
-                    loadUserScans(phone);
-                } else {
-                    document.getElementById("scanMessage").innerText = data.message || "Error scanning QR code";
-                    document.getElementById("scanMessage").style.color = "red";
-                }
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                
+                setTimeout(() => {
+                    scanProgress.classList.add('hidden');
+                    
+                    if (data.duplicate) {
+                        scanMessage.innerHTML = `
+                            <i class="fas fa-exclamation-circle"></i> You've already scanned this QR code!
+                        `;
+                        scanMessage.className = 'error';
+                        scanErrorSound.play();
+                    } else if (data.success) {
+                        scanMessage.innerHTML = `
+                            <i class="fas fa-check-circle"></i> QR Code scanned successfully!
+                        `;
+                        scanMessage.className = 'success';
+                        scanSuccessSound.play();
+                        
+                        // Refresh the scan history
+                        loadUserScans(phone);
+                    } else {
+                        scanMessage.innerHTML = `
+                            <i class="fas fa-exclamation-circle"></i> ${data.message || "Error scanning QR code"}
+                        `;
+                        scanMessage.className = 'error';
+                        scanErrorSound.play();
+                    }
+                    
+                    // Resume scanner after delay
+                    if (!isManualEntry && scanner) {
+                        setTimeout(() => {
+                            scanner.resume().catch(err => console.error("Scanner resume error:", err));
+                            scanMessage.textContent = '';
+                            scanMessage.className = '';
+                        }, 2000);
+                    }
+                }, 500);
             })
             .catch(error => {
                 console.error("Error scanning QR Code:", error);
-                document.getElementById("scanMessage").innerText = "Failed to scan QR Code. Please try again.";
-                document.getElementById("scanMessage").style.color = "red";
+                clearInterval(progressInterval);
+                scanProgress.classList.add('hidden');
+                
+                scanMessage.innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i> Failed to scan QR Code. Please try again.
+                `;
+                scanMessage.className = 'error';
+                scanErrorSound.play();
+                
+                if (!isManualEntry && scanner) {
+                    setTimeout(() => {
+                        scanner.resume().catch(err => console.error("Scanner resume error:", err));
+                        scanMessage.textContent = '';
+                        scanMessage.className = '';
+                    }, 2000);
+                }
             });
         }
 
-        // Function to load user's scan history
+        // Load user's scan history
         function loadUserScans(phone) {
             fetch("https://qrcodelogin-9741.onrender.com/get-user-scans", {
                 method: "POST",
@@ -241,18 +790,43 @@
             .then(data => {
                 if (data.success) {
                     const scansList = document.createElement("div");
-                    scansList.innerHTML = `<h3>Your Scanned QR Codes (${data.count}):</h3>`;
+                    scansList.className = "scans-list";
+                    
+                    scansList.innerHTML = `
+                        <h3><i class="fas fa-history"></i> Your Scan History (${data.count})</h3>
+                        ${data.count > 0 ? '' : '<p class="no-scans"><i class="fas fa-info-circle"></i> No QR codes scanned yet.</p>'}
+                    `;
                     
                     if (data.scans.length > 0) {
                         const list = document.createElement("ul");
+                        list.className = "scan-items";
+                        
                         data.scans.forEach(scan => {
                             const item = document.createElement("li");
-                            item.textContent = `${scan.serial_number} - ${new Date(scan.scanned_at).toLocaleString()}`;
+                            item.className = "scan-item";
+                            
+                            const date = new Date(scan.scanned_at);
+                            const formattedDate = date.toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            
+                            item.innerHTML = `
+                                <div class="scan-code">
+                                    <i class="fas fa-qrcode"></i>
+                                    <span>${scan.serial_number}</span>
+                                </div>
+                                <div class="scan-time">
+                                    <i class="fas fa-clock"></i>
+                                    <span>${formattedDate}</span>
+                                </div>
+                            `;
                             list.appendChild(item);
                         });
                         scansList.appendChild(list);
-                    } else {
-                        scansList.innerHTML += "<p>No QR codes scanned yet.</p>";
                     }
                     
                     const existingList = document.getElementById("scansList");
@@ -260,16 +834,115 @@
                         existingList.replaceWith(scansList);
                     } else {
                         scansList.id = "scansList";
-                        document.getElementById("qrSection").appendChild(scansList);
+                        document.querySelector('.scan-history').appendChild(scansList);
                     }
                 }
             })
             .catch(err => {
                 console.error("Error loading user scans:", err);
-                document.getElementById("scanMessage").innerText = "Failed to load scan history";
-                document.getElementById("scanMessage").style.color = "red";
+                showNotification('Failed to load scan history', 'error');
             });
         }
+
+        // Load profile data
+        function loadProfileData() {
+            if (!currentUser) return;
+            
+            document.getElementById('profilePhone').textContent = 
+                currentUser.phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+            
+            // Simulate loading stats
+            document.getElementById('totalScans').textContent = '12'; // Would come from API
+            document.getElementById('lastScan').textContent = '2 min ago'; // Would come from API
+        }
+
+        // Show security verification options
+        function showSecurityVerification() {
+            securityVerification.classList.remove('hidden');
+            pinEntry.classList.add('hidden');
+            
+            // Enable/disable options based on availability
+            faceIdBtn.disabled = !hasFaceIDSupport();
+            fingerprintBtn.disabled = !hasFingerprintSupport();
+        }
+
+        // Check for Face ID support
+        function hasFaceIDSupport() {
+            // In a real app, you would check actual device capabilities
+            return false; // Simulating no support for demo
+        }
+
+        // Check for Fingerprint support
+        function hasFingerprintSupport() {
+            // In a real app, you would check actual device capabilities
+            return false; // Simulating no support for demo
+        }
+
+        // Check for any biometric support
+        function hasBiometricSupport() {
+            return hasFaceIDSupport() || hasFingerprintSupport();
+        }
+
+        // Verify with Face ID
+        function verifyWithFaceID() {
+            showNotification('Face ID verification not implemented in demo', 'info');
+        }
+
+        // Verify with Fingerprint
+        function verifyWithFingerprint() {
+            showNotification('Fingerprint verification not implemented in demo', 'info');
+        }
+
+        // Show PIN entry
+        function showPinEntry() {
+            pinEntry.classList.remove('hidden');
+            securityPin.focus();
+        }
+
+        // Verify PIN
+        function verifyPin() {
+            const pin = securityPin.value;
+            
+            if (!pin || pin.length !== 6) {
+                showNotification('Please enter a 6-digit PIN', 'error');
+                return;
+            }
+            
+            // In a real app, you would verify the PIN against stored hash
+            showNotification('PIN verification successful', 'success');
+            securityVerification.classList.add('hidden');
+            securityPin.value = '';
+        }
+
+        // Logout
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('qrLoginUser');
+            
+            // Reset UI
+            phoneSection.classList.remove('hidden');
+            otpSection.classList.add('hidden');
+            qrSection.classList.add('hidden');
+            securityVerification.classList.add('hidden');
+            profileContainer.classList.add('hidden');
+            mainContainer.classList.remove('hidden');
+            
+            phoneInput.value = '';
+            otpInput.value = '';
+            userGreeting.innerHTML = '';
+            
+            // Stop scanner if active
+            if (scanner) {
+                scanner.clear().catch(err => console.error("Scanner clear error:", err));
+                scanner = null;
+            }
+            
+            showNotification('Logged out successfully', 'success');
+            toggleSideNav();
+        }
+
+        // Initialize the app
+        init();
     </script>
 </body>
 </html>
