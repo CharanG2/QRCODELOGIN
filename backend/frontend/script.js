@@ -22,20 +22,12 @@ function sendOTP() {
         document.getElementById("otpSection").style.display = "block";
         document.getElementById("otpDisplay").innerText = "Your OTP: " + data.otp;
     })
-    .catch(err => {
-        console.error("Error sending OTP:", err);
-        alert("Failed to send OTP. Please try again.");
-    });
+    .catch(err => console.error("Error sending OTP:", err));
 }
 
 function verifyOTP() {
     let phone = document.getElementById("phone").value;
     let otp = document.getElementById("otp").value;
-
-    if (!otp || otp.length !== 6) {
-        alert("Please enter a valid 6-digit OTP.");
-        return;
-    }
 
     fetch("https://qrcodelogin-9741.onrender.com/verify-otp", {
         method: "POST",
@@ -55,30 +47,20 @@ function verifyOTP() {
             alert("Invalid OTP! Please try again.");
         }
     })
-    .catch(err => {
-        console.error("Error verifying OTP:", err);
-        alert("Failed to verify OTP. Please try again.");
-    });
+    .catch(err => console.error("Error verifying OTP:", err));
 }
 
 function startScanner() {
-    const phone = document.getElementById("phone").value;
-    if (!phone) {
-        alert("Please verify your phone number first.");
-        return;
-    }
-
     if (!scanner) {
-        scanner = new Html5QrcodeScanner("qr-video", { 
-            fps: 10, 
-            qrbox: 250 
-        });
+        scanner = new Html5QrcodeScanner("qr-video", { fps: 10, qrbox: 250 });
     }
 
     scanner.render((decodedText) => {
         scanner.clear();
         scanner = null;
 
+        let phone = document.getElementById("phone").value;
+        
         fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -89,8 +71,10 @@ function startScanner() {
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                alert(data.message);
+            if (data.duplicate) {
+                alert("You've already scanned this QR code!");
+            } else if (data.success) {
+                alert("QR Code scanned successfully!");
                 loadUserScans(phone);
             } else {
                 alert(data.message || "Error scanning QR code");
@@ -100,8 +84,6 @@ function startScanner() {
             console.error("Error scanning QR Code:", err);
             alert("Failed to scan QR Code. Please try again.");
         });
-    }, (error) => {
-        console.error("QR Scanner error:", error);
     });
 }
 
@@ -114,8 +96,7 @@ function loadUserScans(phone) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            const scansList = document.getElementById("scansList") || document.createElement("div");
-            scansList.id = "scansList";
+            const scansList = document.createElement("div");
             scansList.innerHTML = `<h3>Your Scanned QR Codes (${data.count}):</h3>`;
             
             if (data.scans.length > 0) {
@@ -130,11 +111,14 @@ function loadUserScans(phone) {
                 scansList.innerHTML += "<p>No QR codes scanned yet.</p>";
             }
             
-            document.getElementById("qrSection").appendChild(scansList);
+            const existingList = document.getElementById("scansList");
+            if (existingList) {
+                existingList.replaceWith(scansList);
+            } else {
+                scansList.id = "scansList";
+                document.getElementById("qrSection").appendChild(scansList);
+            }
         }
     })
-    .catch(err => {
-        console.error("Error loading user scans:", err);
-        alert("Failed to load your scanned QR codes.");
-    });
+    .catch(err => console.error("Error loading user scans:", err));
 }
