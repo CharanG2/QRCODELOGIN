@@ -8,18 +8,13 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
-    <!-- Video Background -->
-    <video autoplay muted loop id="video-background">
-        <source src="/home/princedj/Downloads/215484_medium.mp4" type="video/mp4">
-    </video>
-
     <div class="container">
         <img src="NimbleLogo.png" class="logo" alt="Company Logo">
         <h2>QR Code Login</h2>
 
         <!-- Phone Input and Send OTP -->
         <label for="phone" id="phoneLabel">Enter Phone Number:</label>
-        <input type="text" id="phone" placeholder="Enter phone number">
+        <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
         <br>
         <button id="sendOTP">Send OTP</button>
 
@@ -27,7 +22,7 @@
         <div id="otpSection" style="display: none;">
             <p id="otpDisplay"></p>
             <label for="otp" id="otpLabel">Enter OTP:</label>
-            <input type="text" id="otp" placeholder="Enter OTP">
+            <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
             <div id="otpTimer"></div>
             <br>
             <button id="verifyOTP">Verify OTP</button>
@@ -44,27 +39,28 @@
     </div>
 
     <script>
-        // Your existing JavaScript code remains unchanged
         let scanner;
         let otpTimer;
         let timeLeft = 30;
         let attemptCount = 0;
         const MAX_ATTEMPTS = 3;
 
-        document.getElementById("sendOTP").addEventListener("click", sendOTP);
-        document.getElementById("resendOTP").addEventListener("click", function() {
-            if (attemptCount >= MAX_ATTEMPTS) {
-                alert("Maximum attempts reached. Please try again later.");
-                return;
+        // Phone number input validation
+        document.getElementById("phone").addEventListener("input", function(e) {
+            this.value = this.value.replace(/[^0-9]/g, ''); // Only allow numbers
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10); // Limit to 10 digits
             }
-            sendOTP();
         });
+
+        // Send OTP Functionality
+        document.getElementById("sendOTP").addEventListener("click", sendOTP);
 
         function sendOTP() {
             let phone = document.getElementById("phone").value;
             
-            if (!/^\d{10}$/.test(phone)) {
-                alert("Please enter a valid 10-digit phone number.");
+            if (phone.length !== 10) {
+                alert("Please enter exactly 10-digit phone number.");
                 return;
             }
 
@@ -96,6 +92,15 @@
             });
         }
 
+        // Resend OTP Functionality
+        document.getElementById("resendOTP").addEventListener("click", function() {
+            if (attemptCount >= MAX_ATTEMPTS) {
+                alert("Maximum attempts reached. Please try again later.");
+                return;
+            }
+            sendOTP();
+        });
+
         function startTimer() {
             clearInterval(otpTimer);
             timeLeft = 30;
@@ -124,6 +129,7 @@
             document.getElementById("otpTimer").innerText = `Time remaining: ${timeLeft} seconds`;
         }
 
+        // Verify OTP Functionality
         document.getElementById("verifyOTP").addEventListener("click", function() {
             let phone = document.getElementById("phone").value;
             let otp = document.getElementById("otp").value;
@@ -145,6 +151,8 @@
                     document.getElementById("qrSection").style.display = "block";
                     document.getElementById("otpSection").style.display = "none";
                     attemptCount = 0;
+                    
+                    // Load user's scan history after successful login
                     loadUserScans(phone);
                 } else {
                     alert("Invalid OTP!");
@@ -163,6 +171,7 @@
             });
         });
 
+        // Scan QR Code Functionality with user tracking
         document.getElementById("scanQR").addEventListener("click", function() {
             if (!scanner) {
                 scanner = new Html5QrcodeScanner("qr-video", { 
@@ -174,9 +183,11 @@
 
             scanner.render(
                 (decodedText) => {
+                    // Success callback
                     handleScannedQR(decodedText);
                 },
                 (errorMessage) => {
+                    // Failure callback
                     console.error("QR Scanner Error:", errorMessage);
                     document.getElementById("scanMessage").innerText = "Scanner error: " + errorMessage;
                 }
@@ -205,6 +216,7 @@
                 } else if (data.success) {
                     document.getElementById("scanMessage").innerText = "QR Code scanned successfully!";
                     document.getElementById("scanMessage").style.color = "green";
+                    // Refresh the scan history after successful scan
                     loadUserScans(phone);
                 } else {
                     document.getElementById("scanMessage").innerText = data.message || "Error scanning QR code";
@@ -218,6 +230,7 @@
             });
         }
 
+        // Function to load user's scan history
         function loadUserScans(phone) {
             fetch("https://qrcodelogin-9741.onrender.com/get-user-scans", {
                 method: "POST",
