@@ -2,14 +2,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #4361ee;
-  --secondary: #3f37c9;
-  --accent: #4895ef;
-  --dark: #1b263b;
-  --darker: #0d1b2a;
+  --primary: #6c63ff;
+  --secondary: #5649e6;
+  --accent: #00bfa6;
+  --dark: #1a1a2e;
+  --darker: #16213e;
   --light: #f8f9fa;
-  --success: #4cc9f0;
-  --danger: #f72585;
+  --success: #00d4b8;
+  --danger: #ff4d6d;
 }
 
 body {
@@ -34,9 +34,9 @@ body::before {
   width: 200%;
   height: 200%;
   background: 
-    radial-gradient(circle at 70% 30%, rgba(67, 97, 238, 0.15) 0%, transparent 30%),
-    radial-gradient(circle at 30% 70%, rgba(72, 149, 239, 0.15) 0%, transparent 30%),
-    radial-gradient(circle at center, rgba(76, 201, 240, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 70% 30%, rgba(108, 99, 255, 0.15) 0%, transparent 30%),
+    radial-gradient(circle at 30% 70%, rgba(0, 191, 166, 0.15) 0%, transparent 30%),
+    radial-gradient(circle at center, rgba(0, 212, 184, 0.1) 0%, transparent 50%);
   animation: rotateBackground 30s linear infinite;
   z-index: -2;
 }
@@ -112,7 +112,7 @@ body::after {
 
 .container:hover {
   transform: translateY(-0.5rem) scale(1.02);
-  box-shadow: 0 1.5rem 3.5rem rgba(0, 198, 255, 0.25);
+  box-shadow: 0 1.5rem 3.5rem rgba(0, 212, 184, 0.25);
 }
 
 .logo {
@@ -120,7 +120,7 @@ body::after {
   height: auto;
   margin: 0 auto 1.5rem;
   filter: 
-    drop-shadow(0 0 0.75rem rgba(0, 198, 255, 0.6))
+    drop-shadow(0 0 0.75rem rgba(0, 212, 184, 0.6))
     brightness(1.1);
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -130,7 +130,7 @@ body::after {
 .logo:hover {
   transform: scale(1.05) rotate(5deg);
   filter: 
-    drop-shadow(0 0 1rem rgba(0, 198, 255, 0.8))
+    drop-shadow(0 0 1rem rgba(0, 212, 184, 0.8))
     brightness(1.2);
 }
 
@@ -139,7 +139,7 @@ h2 {
   font-size: 1.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;
-  text-shadow: 0 0 1rem rgba(0, 198, 255, 0.7);
+  text-shadow: 0 0 1rem rgba(0, 212, 184, 0.7);
   animation: 
     floatTitle 3s ease-in-out infinite,
     glowTitle 2s infinite alternate;
@@ -193,8 +193,8 @@ input:focus {
   border: 1px solid var(--success);
   background: rgba(255, 255, 255, 0.15);
   box-shadow: 
-    inset 0 0 0.5rem rgba(0, 255, 204, 0.2),
-    0 0.5rem 1rem rgba(0, 198, 255, 0.3);
+    inset 0 0 0.5rem rgba(0, 212, 184, 0.2),
+    0 0.5rem 1rem rgba(0, 212, 184, 0.3);
   transform: translateY(-0.1rem);
 }
 
@@ -210,7 +210,7 @@ button {
   font-weight: 500;
   transition: all 0.3s ease;
   box-shadow: 
-    0 0.25rem 0.75rem rgba(67, 97, 238, 0.4),
+    0 0.25rem 0.75rem rgba(108, 99, 255, 0.4),
     inset 0 -0.1rem 0.1rem rgba(0, 0, 0, 0.2);
   position: relative;
   overflow: hidden;
@@ -237,7 +237,7 @@ button::before {
 button:hover {
   background: linear-gradient(135deg, var(--secondary), var(--primary));
   box-shadow: 
-    0 0.5rem 1.25rem rgba(67, 97, 238, 0.6),
+    0 0.5rem 1.25rem rgba(108, 99, 255, 0.6),
     inset 0 -0.1rem 0.1rem rgba(0, 0, 0, 0.2);
   transform: translateY(-0.1rem);
 }
@@ -265,20 +265,20 @@ button:hover::before {
   display: none;
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, #ff416c, #ff4b2b);
+  background: linear-gradient(135deg, var(--danger), #ff6b6b);
   color: white;
   border: none;
   border-radius: 2rem;
   cursor: pointer;
   font-size: 1rem;
   transition: all 0.3s ease;
-  box-shadow: 0 0.25rem 0.75rem rgba(255, 65, 108, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(255, 77, 109, 0.4);
   margin-top: 1rem;
 }
 
 #downloadPDF:hover {
-  background: linear-gradient(135deg, #ff4b2b, #ff416c);
-  box-shadow: 0 0.5rem 1.25rem rgba(255, 65, 108, 0.6);
+  background: linear-gradient(135deg, #ff6b6b, var(--danger));
+  box-shadow: 0 0.5rem 1.25rem rgba(255, 77, 109, 0.6);
   transform: translateY(-0.1rem);
 }
 
@@ -294,8 +294,8 @@ button:hover::before {
 }
 
 @keyframes glowTitle {
-  0% { text-shadow: 0 0 1rem rgba(0, 198, 255, 0.6); }
-  100% { text-shadow: 0 0 1.5rem rgba(0, 198, 255, 0.9); }
+  0% { text-shadow: 0 0 1rem rgba(0, 212, 184, 0.6); }
+  100% { text-shadow: 0 0 1.5rem rgba(0, 212, 184, 0.9); }
 }
 
 /* Responsive adjustments */
