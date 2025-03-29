@@ -57,7 +57,7 @@ app.post("/scan-qr", async (req, res) => {
     try {
         // Check if QR code exists
         const qrCheck = await pool.query(
-            "SELECT * FROM qr_codes WHERE serial_number = $1", 
+            "SELECT id, phone_number, scanned FROM qr_codes WHERE serial_number = $1", 
             [serialNumber]
         );
 
@@ -65,14 +65,10 @@ app.post("/scan-qr", async (req, res) => {
             return res.json({ success: false, message: "QR Code not found!" });
         }
 
-        // Check if this user already scanned this QR code
-        const userScanCheck = await pool.query(
-            `SELECT * FROM qr_codes 
-             WHERE serial_number = $1 AND phone_number = $2`,
-            [serialNumber, phone]
-        );
+        const qrData = qrCheck.rows[0];
 
-        if (userScanCheck.rows.length > 0) {
+        // Case 1: QR already scanned by this user
+        if (qrData.phone_number === phone) {
             return res.json({ 
                 success: false,
                 message: "You have already scanned this QR code!",
@@ -80,7 +76,16 @@ app.post("/scan-qr", async (req, res) => {
             });
         }
 
-        // Update qr_codes table
+        // Case 2: QR already scanned by another user
+        if (qrData.scanned && qrData.phone_number !== phone) {
+            return res.json({ 
+                success: false,
+                message: "This QR code has already been used by another user!",
+                alreadyUsed: true
+            });
+        }
+
+        // Case 3: QR is available for scanning
         await pool.query(
             `UPDATE qr_codes 
              SET scanned = TRUE, phone_number = $1, scan_timestamp = NOW() 
@@ -95,14 +100,6 @@ app.post("/scan-qr", async (req, res) => {
 
     } catch (error) {
         console.error("Database error:", error);
-        
-        if (error.code === '23505') { // Unique violation
-            return res.json({ 
-                success: false,
-                message: "This QR code was already scanned by you!" 
-            });
-        }
-        
         return res.status(500).json({ 
             success: false,
             message: "Database error" 
