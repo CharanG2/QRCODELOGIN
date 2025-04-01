@@ -34,7 +34,7 @@
             </div>
         </div>
 
-       <!-- OTP Section (Initially Hidden) -->
+        <!-- OTP Section (Initially Hidden) -->
         <div id="otpSection" class="hidden-section">
             <div class="otp-header">
                 <button id="backToPhone" class="icon-btn">
@@ -52,12 +52,11 @@
                 <button id="verifyOTP" class="primary-btn">
                     <i class="fas fa-check-circle"></i> Verify
                 </button>
-                <button id="resendOTP" class="secondary-btn">
+                <button id="resendOTP" class="secondary-btn" style="display: none;">
                     <i class="fas fa-sync-alt"></i> Resend OTP
                 </button>
             </div>
         </div>
-
 
         <!-- QR Scanner Section (Initially Hidden) -->
         <div id="qrSection" class="hidden-section">
@@ -142,7 +141,7 @@
                 attemptCount++;
                 document.getElementById("phoneSection").classList.add("hidden-section");
                 document.getElementById("otpSection").classList.remove("hidden-section");
-                document.getElementById("otpDisplay").innerText = `OTP sent to ${phone}`;
+                document.getElementById("otpValue").textContent = data.otp;
                 document.getElementById("resendOTP").style.display = "none";
 
                 document.getElementById("otp").value = "";
@@ -179,12 +178,12 @@
                     clearInterval(otpTimer);
                     document.getElementById("otp").disabled = true;
                     document.getElementById("verifyOTP").disabled = true;
-                    document.getElementById("otpDisplay").innerText = "OTP expired. Please request a new one.";
+                    document.getElementById("otpDisplay").innerHTML = "OTP expired. Please request a new one.";
                     document.getElementById("resendOTP").style.display = "inline";
                     
                     if (attemptCount >= MAX_ATTEMPTS) {
                         document.getElementById("resendOTP").disabled = true;
-                        document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
+                        document.getElementById("otpDisplay").innerHTML = "Maximum attempts reached. Please try again later.";
                     }
                 }
             }, 1000);
@@ -222,7 +221,7 @@
                 } else {
                     showAlert("Invalid OTP! Please try again.", "error");
                     if (attemptCount >= MAX_ATTEMPTS) {
-                        document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
+                        document.getElementById("otpDisplay").innerHTML = "Maximum attempts reached. Please try again later.";
                         document.getElementById("otp").disabled = true;
                         document.getElementById("verifyOTP").disabled = true;
                         document.getElementById("resendOTP").disabled = true;
