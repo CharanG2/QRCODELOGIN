@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        <!-- OTP Section (Initially Hidden) -->
+       <!-- OTP Section (Initially Hidden) -->
         <div id="otpSection" class="hidden-section">
             <div class="otp-header">
                 <button id="backToPhone" class="icon-btn">
@@ -43,7 +43,7 @@
                 <h3>Verify OTP</h3>
             </div>
             <div class="input-group">
-                <p id="otpDisplay" class="otp-message"></p>
+                <p id="otpDisplay" class="otp-message">Your OTP: <span id="otpValue"></span></p>
                 <label for="otp">Enter 6-digit OTP</label>
                 <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
                 <div id="otpTimer" class="timer"></div>
@@ -57,6 +57,7 @@
                 </button>
             </div>
         </div>
+
 
         <!-- QR Scanner Section (Initially Hidden) -->
         <div id="qrSection" class="hidden-section">
