@@ -6,77 +6,77 @@
     <title>QR Code Login</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
-            font-family: Arial, sans-serif;
-        }
-        .logo {
-            max-width: 200px;
-            margin-bottom: 20px;
-        }
-        input, button {
-            padding: 10px;
-            margin: 5px 0;
-            width: 100%;
-            max-width: 300px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:disabled {
-            background-color: #cccccc;
-        }
-        #scanStatus {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        #qr-video {
-            margin: 10px 0;
-            border: 2px solid #ddd;
-        }
-        #scansList {
-            margin-top: 20px;
-            text-align: left;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <div class="background-animation">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
     <div class="container">
         <img src="NimbleLogo.png" class="logo" alt="Company Logo">
         <h2>QR Code Login</h2>
 
-        <!-- Phone Input and Send OTP -->
-        <label for="phone" id="phoneLabel">Enter Phone Number:</label>
-        <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
-        <br>
-        <button id="sendOTP">Send OTP</button>
+        <!-- Phone Input Section -->
+        <div id="phoneSection">
+            <div class="input-group">
+                <label for="phone" id="phoneLabel">Enter Phone Number</label>
+                <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
+            </div>
+            <div class="button-group">
+                <button id="sendOTP" class="primary-btn">
+                    <i class="fas fa-paper-plane"></i> Send OTP
+                </button>
+            </div>
+        </div>
 
         <!-- OTP Section (Initially Hidden) -->
-        <div id="otpSection" style="display: none;">
-            <p id="otpDisplay"></p>
-            <label for="otp" id="otpLabel">Enter OTP:</label>
-            <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
-            <div id="otpTimer"></div>
-            <br>
-            <button id="verifyOTP">Verify OTP</button>
-            <button id="resendOTP" style="display: none;">Resend OTP</button>
+        <div id="otpSection" class="hidden-section">
+            <div class="otp-header">
+                <button id="backToPhone" class="icon-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h3>Verify OTP</h3>
+            </div>
+            <div class="input-group">
+                <p id="otpDisplay" class="otp-message"></p>
+                <label for="otp">Enter 6-digit OTP</label>
+                <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
+                <div id="otpTimer" class="timer"></div>
+            </div>
+            <div class="button-group">
+                <button id="verifyOTP" class="primary-btn">
+                    <i class="fas fa-check-circle"></i> Verify
+                </button>
+                <button id="resendOTP" class="secondary-btn">
+                    <i class="fas fa-sync-alt"></i> Resend OTP
+                </button>
+            </div>
         </div>
 
         <!-- QR Scanner Section (Initially Hidden) -->
-        <div id="qrSection" style="display: none;">
-            <button id="scanQR">Scan QR Code</button>
-            <div id="scanStatus"></div>
-            <div id="qr-video" style="width: 100%;"></div>
-            <div id="scansList"></div>
+        <div id="qrSection" class="hidden-section">
+            <div class="qr-header">
+                <button id="backToOtp" class="icon-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h3>Scan QR Code</h3>
+            </div>
+            <div class="qr-container">
+                <button id="scanQR" class="primary-btn">
+                    <i class="fas fa-qrcode"></i> Start Scanner
+                </button>
+                <div id="scanStatus" class="status-message"></div>
+                <div id="qr-video" class="qr-video-container"></div>
+                <div id="scansList" class="scans-list"></div>
+            </div>
+            <button id="cancelScan" class="secondary-btn">
+                <i class="fas fa-times"></i> Cancel
+            </button>
         </div>
     </div>
 
@@ -89,9 +89,34 @@
 
         // Phone number input validation
         document.getElementById("phone").addEventListener("input", function(e) {
-            this.value = this.value.replace(/[^0-9]/g, ''); // Only allow numbers
+            this.value = this.value.replace(/[^0-9]/g, '');
             if (this.value.length > 10) {
-                this.value = this.value.slice(0, 10); // Limit to 10 digits
+                this.value = this.value.slice(0, 10);
+            }
+        });
+
+        // Navigation buttons
+        document.getElementById("backToPhone").addEventListener("click", function() {
+            document.getElementById("otpSection").classList.add("hidden-section");
+            document.getElementById("phoneSection").classList.remove("hidden-section");
+            clearInterval(otpTimer);
+        });
+
+        document.getElementById("backToOtp").addEventListener("click", function() {
+            document.getElementById("qrSection").classList.add("hidden-section");
+            document.getElementById("otpSection").classList.remove("hidden-section");
+            if (scanner) {
+                scanner.clear().catch(error => console.error("Failed to clear scanner:", error));
+                scanner = null;
+            }
+        });
+
+        document.getElementById("cancelScan").addEventListener("click", function() {
+            document.getElementById("qrSection").classList.add("hidden-section");
+            document.getElementById("phoneSection").classList.remove("hidden-section");
+            if (scanner) {
+                scanner.clear().catch(error => console.error("Failed to clear scanner:", error));
+                scanner = null;
             }
         });
 
@@ -102,7 +127,7 @@
             let phone = document.getElementById("phone").value;
             
             if (phone.length !== 10) {
-                alert("Please enter exactly 10-digit phone number.");
+                showAlert("Please enter exactly 10-digit phone number.", "error");
                 return;
             }
 
@@ -114,13 +139,10 @@
             .then(res => res.json())
             .then(data => {
                 attemptCount++;
-                document.getElementById("otpSection").style.display = "block";
-                document.getElementById("otpDisplay").innerText = "Your OTP: " + data.otp;
+                document.getElementById("phoneSection").classList.add("hidden-section");
+                document.getElementById("otpSection").classList.remove("hidden-section");
+                document.getElementById("otpDisplay").innerText = `OTP sent to ${phone}`;
                 document.getElementById("resendOTP").style.display = "none";
-
-                document.getElementById("phone").style.display = "none";
-                document.getElementById("sendOTP").style.display = "none";
-                document.getElementById("phoneLabel").style.display = "none";
 
                 document.getElementById("otp").value = "";
                 document.getElementById("otp").disabled = false;
@@ -130,14 +152,14 @@
             })
             .catch(error => {
                 console.error("Error sending OTP:", error);
-                alert("Failed to send OTP. Try again.");
+                showAlert("Failed to send OTP. Please try again.", "error");
             });
         }
 
         // Resend OTP Functionality
         document.getElementById("resendOTP").addEventListener("click", function() {
             if (attemptCount >= MAX_ATTEMPTS) {
-                alert("Maximum attempts reached. Please try again later.");
+                showAlert("Maximum attempts reached. Please try again later.", "error");
                 return;
             }
             sendOTP();
@@ -168,7 +190,7 @@
         }
 
         function updateTimerDisplay() {
-            document.getElementById("otpTimer").innerText = "Time remaining: " + timeLeft + " seconds";
+            document.getElementById("otpTimer").innerHTML = `<i class="fas fa-clock"></i> Expires in ${timeLeft}s`;
         }
 
         // Verify OTP Functionality
@@ -177,7 +199,7 @@
             let otp = document.getElementById("otp").value;
 
             if (!otp) {
-                alert("Please enter the OTP");
+                showAlert("Please enter the OTP", "error");
                 return;
             }
 
@@ -190,14 +212,14 @@
             .then(data => {
                 if (data.success) {
                     clearInterval(otpTimer);
-                    document.getElementById("qrSection").style.display = "block";
-                    document.getElementById("otpSection").style.display = "none";
+                    document.getElementById("otpSection").classList.add("hidden-section");
+                    document.getElementById("qrSection").classList.remove("hidden-section");
                     attemptCount = 0;
                     
                     // Load user's scan history after successful login
                     loadUserScans(phone);
                 } else {
-                    alert("Invalid OTP!");
+                    showAlert("Invalid OTP! Please try again.", "error");
                     if (attemptCount >= MAX_ATTEMPTS) {
                         document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
                         document.getElementById("otp").disabled = true;
@@ -209,22 +231,21 @@
             })
             .catch(error => {
                 console.error("Error verifying OTP:", error);
-                alert("OTP verification failed.");
+                showAlert("OTP verification failed. Please try again.", "error");
             });
         });
 
-        // Scan QR Code Functionality with user tracking
+        // Scan QR Code Functionality
         document.getElementById("scanQR").addEventListener("click", function() {
             const phone = document.getElementById("phone").value;
             if (!phone) {
-                alert("Please verify your phone number first.");
+                showAlert("Please verify your phone number first.", "error");
                 return;
             }
 
             document.getElementById("scanQR").disabled = true;
-            document.getElementById("scanStatus").innerHTML = "Preparing scanner...";
-            document.getElementById("scanStatus").style.backgroundColor = "#e6f7ff";
-            document.getElementById("scanStatus").style.color = "#0066cc";
+            document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Preparing scanner...";
+            document.getElementById("scanStatus").className = "status-message info";
 
             if (!scanner) {
                 scanner = new Html5QrcodeScanner("qr-video", { 
@@ -242,18 +263,16 @@
                 },
                 (errorMessage) => {
                     console.error("QR Scanner Error:", errorMessage);
-                    document.getElementById("scanStatus").innerHTML = "Scanner error: " + errorMessage;
-                    document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
-                    document.getElementById("scanStatus").style.color = "#c62828";
+                    document.getElementById("scanStatus").innerHTML = `<i class="fas fa-exclamation-triangle"></i> Scanner error: ${errorMessage}`;
+                    document.getElementById("scanStatus").className = "status-message error";
                     document.getElementById("scanQR").disabled = false;
                 }
             );
         });
 
         function handleScannedQR(decodedText, phone) {
-            document.getElementById("scanStatus").innerHTML = "Processing QR code...";
-            document.getElementById("scanStatus").style.backgroundColor = "#e6f7ff";
-            document.getElementById("scanStatus").style.color = "#0066cc";
+            document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processing QR code...";
+            document.getElementById("scanStatus").className = "status-message info";
             
             fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
                 method: "POST",
@@ -266,14 +285,12 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    document.getElementById("scanStatus").innerHTML = "QR Code scanned successfully!";
-                    document.getElementById("scanStatus").style.backgroundColor = "#e8f5e9";
-                    document.getElementById("scanStatus").style.color = "#2e7d32";
+                    document.getElementById("scanStatus").innerHTML = "<i class='fas fa-check-circle'></i> QR Code scanned successfully!";
+                    document.getElementById("scanStatus").className = "status-message success";
                     loadUserScans(phone);
                 } else {
-                    document.getElementById("scanStatus").innerHTML = data.message;
-                    document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
-                    document.getElementById("scanStatus").style.color = "#c62828";
+                    document.getElementById("scanStatus").innerHTML = `<i class="fas fa-exclamation-circle"></i> ${data.message}`;
+                    document.getElementById("scanStatus").className = "status-message error";
                     
                     if (data.alreadyUsed) {
                         document.getElementById("scanStatus").innerHTML += "<br>This QR code is already assigned to another user.";
@@ -283,9 +300,8 @@
             })
             .catch(error => {
                 console.error("Error scanning QR Code:", error);
-                document.getElementById("scanStatus").innerHTML = "Failed to scan QR Code. Please try again.";
-                document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
-                document.getElementById("scanStatus").style.color = "#c62828";
+                document.getElementById("scanStatus").innerHTML = "<i class='fas fa-times-circle'></i> Failed to scan QR Code. Please try again.";
+                document.getElementById("scanStatus").className = "status-message error";
                 document.getElementById("scanQR").disabled = false;
             });
         }
@@ -301,35 +317,47 @@
             .then(data => {
                 if (data.success) {
                     const scansList = document.createElement("div");
-                    scansList.innerHTML = `<h3>Your Scanned QR Codes (${data.count}):</h3>`;
+                    scansList.className = "scans-list";
+                    scansList.innerHTML = `<h4><i class="fas fa-history"></i> Your Scan History (${data.count}):</h4>`;
                     
                     if (data.scans.length > 0) {
                         const list = document.createElement("ul");
                         data.scans.forEach(scan => {
                             const item = document.createElement("li");
-                            item.textContent = `${scan.serial_number} - ${new Date(scan.scanned_at).toLocaleString()}`;
+                            item.innerHTML = `<i class="fas fa-qrcode"></i> ${scan.serial_number} <span class="scan-time">${new Date(scan.scanned_at).toLocaleString()}</span>`;
                             list.appendChild(item);
                         });
                         scansList.appendChild(list);
                     } else {
-                        scansList.innerHTML += "<p>No QR codes scanned yet.</p>";
+                        scansList.innerHTML += "<p class='no-scans'>No QR codes scanned yet.</p>";
                     }
                     
                     const existingList = document.getElementById("scansList");
                     if (existingList) {
                         existingList.replaceWith(scansList);
                     } else {
-                        scansList.id = "scansList";
                         document.getElementById("qrSection").appendChild(scansList);
                     }
                 }
             })
             .catch(err => {
                 console.error("Error loading user scans:", err);
-                document.getElementById("scanStatus").innerHTML = "Failed to load scan history";
-                document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
-                document.getElementById("scanStatus").style.color = "#c62828";
+                document.getElementById("scanStatus").innerHTML = "<i class='fas fa-exclamation-triangle'></i> Failed to load scan history";
+                document.getElementById("scanStatus").className = "status-message error";
             });
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement("div");
+            alertDiv.className = `alert-message ${type}`;
+            alertDiv.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> ${message}`;
+            
+            document.querySelector(".container").appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.classList.add("fade-out");
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 3000);
         }
     </script>
 </body>
