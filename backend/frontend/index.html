@@ -6,7 +6,6 @@
     <title>QR Code Login</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -16,13 +15,6 @@
         <div class="particle"></div>
         <div class="particle"></div>
         <div class="particle"></div>
-    </div>
-
-    <div class="theme-toggle">
-        <button id="themeToggle">
-            <i class="fas fa-moon"></i>
-            <i class="fas fa-sun"></i>
-        </button>
     </div>
 
     <div class="container">
@@ -40,9 +32,6 @@
                     <i class="fas fa-paper-plane"></i> Send OTP
                 </button>
             </div>
-            <div class="security-notice">
-                <i class="fas fa-shield-alt"></i> Your information is securely encrypted
-            </div>
         </div>
 
         <!-- OTP Section (Initially Hidden) -->
@@ -54,19 +43,9 @@
                 <h3>Verify OTP</h3>
             </div>
             <div class="input-group">
-                <p id="otpDisplay" class="otp-message">Your OTP: <span id="otpValue"></span>
-                    <button id="copyOTP" class="copy-btn">
-                        <i class="far fa-copy"></i> Copy
-                    </button>
-                </p>
+                <p id="otpDisplay" class="otp-message">Your OTP: <span id="otpValue"></span></p>
                 <label for="otp">Enter 6-digit OTP</label>
-                <div class="otp-input-container">
-                    <input type="password" id="otp" placeholder="Enter OTP" maxlength="6">
-                    <button id="toggleOTPVisibility" class="visibility-toggle">
-                        <i class="far fa-eye"></i>
-                    </button>
-                </div>
-                <div id="otpStrength" class="strength-meter"></div>
+                <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
                 <div id="otpTimer" class="timer"></div>
             </div>
             <div class="button-group">
@@ -76,18 +55,6 @@
                 <button id="resendOTP" class="secondary-btn" style="display: none;">
                     <i class="fas fa-sync-alt"></i> Resend OTP
                 </button>
-                <button id="tryBiometric" class="secondary-btn">
-                    <i class="fas fa-fingerprint"></i> Use Biometric
-                </button>
-            </div>
-            <div id="captchaContainer" class="captcha-container" style="display: none;">
-                <div class="captcha-box">
-                    <canvas id="captchaCanvas" width="150" height="50"></canvas>
-                    <button id="refreshCaptcha" class="icon-btn small">
-                        <i class="fas fa-redo"></i>
-                    </button>
-                </div>
-                <input type="text" id="captchaInput" placeholder="Enter CAPTCHA" maxlength="6">
             </div>
         </div>
 
@@ -100,53 +67,16 @@
                 <h3>Scan QR Code</h3>
             </div>
             <div class="qr-container">
-                <div class="qr-tabs">
-                    <button class="qr-tab active" id="scanTab">Scan QR</button>
-                    <button class="qr-tab" id="generateTab">Generate QR</button>
-                </div>
-                
-                <div id="scanContent">
-                    <button id="scanQR" class="primary-btn">
-                        <i class="fas fa-qrcode"></i> Start Scanner
-                    </button>
-                    <div id="scanStatus" class="status-message"></div>
-                    <div id="qr-video" class="qr-video-container"></div>
-                </div>
-                
-                <div id="generateContent" class="hidden-section">
-                    <div class="input-group">
-                        <label for="qrData">Enter Data to Encode</label>
-                        <input type="text" id="qrData" placeholder="Enter text or URL">
-                    </div>
-                    <button id="generateQR" class="primary-btn">
-                        <i class="fas fa-qrcode"></i> Generate QR
-                    </button>
-                    <div id="generatedQR" class="qr-code-display"></div>
-                    <button id="downloadQR" class="secondary-btn" style="display: none;">
-                        <i class="fas fa-download"></i> Download QR
-                    </button>
-                </div>
-                
+                <button id="scanQR" class="primary-btn">
+                    <i class="fas fa-qrcode"></i> Start Scanner
+                </button>
+                <div id="scanStatus" class="status-message"></div>
+                <div id="qr-video" class="qr-video-container"></div>
                 <div id="scansList" class="scans-list"></div>
             </div>
             <button id="cancelScan" class="secondary-btn">
                 <i class="fas fa-times"></i> Cancel
             </button>
-        </div>
-    </div>
-
-    <div id="sessionTimeoutModal" class="modal hidden-section">
-        <div class="modal-content">
-            <h3><i class="fas fa-clock"></i> Session About to Expire</h3>
-            <p>Your session will expire in <span id="sessionCountdown">60</span> seconds due to inactivity.</p>
-            <div class="modal-buttons">
-                <button id="extendSession" class="primary-btn">
-                    <i class="fas fa-sync-alt"></i> Continue Session
-                </button>
-                <button id="logoutNow" class="secondary-btn">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
         </div>
     </div>
 
@@ -156,30 +86,6 @@
         let timeLeft = 30;
         let attemptCount = 0;
         const MAX_ATTEMPTS = 3;
-        let sessionTimeout;
-        let inactivityTimer;
-        const SESSION_TIMEOUT_DURATION = 300000; // 5 minutes
-        const INACTIVITY_WARNING_TIME = 60000; // 1 minute warning
-        let generatedQRCode = null;
-
-        // Initialize theme from local storage
-        const currentTheme = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', currentTheme);
-        
-        // Initialize phone number from local storage
-        const savedPhone = localStorage.getItem('savedPhone');
-        if (savedPhone) {
-            document.getElementById('phone').value = savedPhone;
-        }
-
-        // Theme toggle functionality
-        document.getElementById('themeToggle').addEventListener('click', function() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            vibrate(50);
-        });
 
         // Phone number input validation
         document.getElementById("phone").addEventListener("input", function(e) {
@@ -194,8 +100,6 @@
             document.getElementById("otpSection").classList.add("hidden-section");
             document.getElementById("phoneSection").classList.remove("hidden-section");
             clearInterval(otpTimer);
-            resetSessionTimer();
-            vibrate(50);
         });
 
         document.getElementById("backToOtp").addEventListener("click", function() {
@@ -205,8 +109,6 @@
                 scanner.clear().catch(error => console.error("Failed to clear scanner:", error));
                 scanner = null;
             }
-            resetSessionTimer();
-            vibrate(50);
         });
 
         document.getElementById("cancelScan").addEventListener("click", function() {
@@ -216,73 +118,7 @@
                 scanner.clear().catch(error => console.error("Failed to clear scanner:", error));
                 scanner = null;
             }
-            resetSessionTimer();
-            vibrate(50);
         });
-
-        // QR Tabs functionality
-        document.getElementById("scanTab").addEventListener("click", function() {
-            document.getElementById("scanContent").classList.remove("hidden-section");
-            document.getElementById("generateContent").classList.add("hidden-section");
-            document.getElementById("scanTab").classList.add("active");
-            document.getElementById("generateTab").classList.remove("active");
-            vibrate(50);
-        });
-
-        document.getElementById("generateTab").addEventListener("click", function() {
-            document.getElementById("scanContent").classList.add("hidden-section");
-            document.getElementById("generateContent").classList.remove("hidden-section");
-            document.getElementById("scanTab").classList.remove("active");
-            document.getElementById("generateTab").classList.add("active");
-            vibrate(50);
-        });
-
-        // Toggle OTP visibility
-        document.getElementById("toggleOTPVisibility").addEventListener("click", function() {
-            const otpInput = document.getElementById("otp");
-            const icon = this.querySelector("i");
-            if (otpInput.type === "password") {
-                otpInput.type = "text";
-                icon.classList.replace("fa-eye", "fa-eye-slash");
-            } else {
-                otpInput.type = "password";
-                icon.classList.replace("fa-eye-slash", "fa-eye");
-            }
-            vibrate(30);
-        });
-
-        // Copy OTP to clipboard
-        document.getElementById("copyOTP").addEventListener("click", function() {
-            const otp = document.getElementById("otpValue").textContent;
-            navigator.clipboard.writeText(otp).then(() => {
-                showAlert("OTP copied to clipboard!", "success");
-                vibrate(100);
-            }).catch(err => {
-                console.error("Failed to copy OTP: ", err);
-                showAlert("Failed to copy OTP", "error");
-            });
-        });
-
-        // OTP strength meter
-        document.getElementById("otp").addEventListener("input", function() {
-            updateOTPStrength(this.value);
-        });
-
-        function updateOTPStrength(otp) {
-            const strengthMeter = document.getElementById("otpStrength");
-            let strength = 0;
-            
-            if (otp.length >= 6) strength += 25;
-            if (/[A-Z]/.test(otp)) strength += 25;
-            if (/[a-z]/.test(otp)) strength += 25;
-            if (/[^A-Za-z0-9]/.test(otp)) strength += 25;
-            
-            strengthMeter.style.width = `${strength}%`;
-            strengthMeter.className = "strength-meter " + 
-                (strength < 25 ? "weak" : 
-                 strength < 50 ? "fair" : 
-                 strength < 75 ? "good" : "strong");
-        }
 
         // Send OTP Functionality
         document.getElementById("sendOTP").addEventListener("click", sendOTP);
@@ -292,12 +128,8 @@
             
             if (phone.length !== 10) {
                 showAlert("Please enter exactly 10-digit phone number.", "error");
-                vibrate(200);
                 return;
             }
-
-            // Save phone to local storage
-            localStorage.setItem('savedPhone', phone);
 
             fetch("https://qrcodelogin-9741.onrender.com/send-otp", {
                 method: "POST",
@@ -311,20 +143,16 @@
                 document.getElementById("otpSection").classList.remove("hidden-section");
                 document.getElementById("otpValue").textContent = data.otp;
                 document.getElementById("resendOTP").style.display = "none";
-                document.getElementById("captchaContainer").style.display = "none";
 
                 document.getElementById("otp").value = "";
                 document.getElementById("otp").disabled = false;
                 document.getElementById("verifyOTP").disabled = false;
 
                 startTimer();
-                startSessionTimer();
-                vibrate(100);
             })
             .catch(error => {
                 console.error("Error sending OTP:", error);
                 showAlert("Failed to send OTP. Please try again.", "error");
-                vibrate(200);
             });
         }
 
@@ -332,43 +160,9 @@
         document.getElementById("resendOTP").addEventListener("click", function() {
             if (attemptCount >= MAX_ATTEMPTS) {
                 showAlert("Maximum attempts reached. Please try again later.", "error");
-                vibrate(200);
-                // Show CAPTCHA after max attempts
-                document.getElementById("captchaContainer").style.display = "block";
-                generateCaptcha();
                 return;
             }
             sendOTP();
-        });
-
-        // Biometric authentication fallback
-        document.getElementById("tryBiometric").addEventListener("click", function() {
-            if (!window.PublicKeyCredential) {
-                showAlert("Biometric authentication not supported in your browser", "error");
-                return;
-            }
-
-            showAlert("Checking for biometric authentication...", "info");
-            
-            // In a real implementation, you would call your biometric API here
-            // This is just a simulation
-            setTimeout(() => {
-                if (Math.random() > 0.3) { // 70% success rate for demo
-                    showAlert("Biometric authentication successful!", "success");
-                    vibrate(100);
-                    // Simulate successful verification
-                    clearInterval(otpTimer);
-                    document.getElementById("otpSection").classList.add("hidden-section");
-                    document.getElementById("qrSection").classList.remove("hidden-section");
-                    attemptCount = 0;
-                    
-                    const phone = document.getElementById("phone").value;
-                    loadUserScans(phone);
-                } else {
-                    showAlert("Biometric authentication failed. Please try OTP.", "error");
-                    vibrate(200);
-                }
-            }, 1500);
         });
 
         function startTimer() {
@@ -406,19 +200,7 @@
 
             if (!otp) {
                 showAlert("Please enter the OTP", "error");
-                vibrate(200);
                 return;
-            }
-
-            // Check CAPTCHA if required
-            if (attemptCount >= MAX_ATTEMPTS) {
-                const captchaInput = document.getElementById("captchaInput").value;
-                if (!validateCaptcha(captchaInput)) {
-                    showAlert("Invalid CAPTCHA! Please try again.", "error");
-                    vibrate(200);
-                    generateCaptcha();
-                    return;
-                }
             }
 
             fetch("https://qrcodelogin-9741.onrender.com/verify-otp", {
@@ -433,92 +215,24 @@
                     document.getElementById("otpSection").classList.add("hidden-section");
                     document.getElementById("qrSection").classList.remove("hidden-section");
                     attemptCount = 0;
-                    vibrate(100);
                     
                     // Load user's scan history after successful login
                     loadUserScans(phone);
                 } else {
                     showAlert("Invalid OTP! Please try again.", "error");
-                    vibrate(200);
                     if (attemptCount >= MAX_ATTEMPTS) {
                         document.getElementById("otpDisplay").innerHTML = "Maximum attempts reached. Please try again later.";
                         document.getElementById("otp").disabled = true;
                         document.getElementById("verifyOTP").disabled = true;
                         document.getElementById("resendOTP").disabled = true;
                         clearInterval(otpTimer);
-                        // Show CAPTCHA
-                        document.getElementById("captchaContainer").style.display = "block";
-                        generateCaptcha();
                     }
                 }
             })
             .catch(error => {
                 console.error("Error verifying OTP:", error);
                 showAlert("OTP verification failed. Please try again.", "error");
-                vibrate(200);
             });
-        });
-
-        // CAPTCHA functions
-        function generateCaptcha() {
-            const canvas = document.getElementById("captchaCanvas");
-            const ctx = canvas.getContext("2d");
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Generate random text
-            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-            let captchaText = "";
-            for (let i = 0; i < 6; i++) {
-                captchaText += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            
-            // Store captcha text in dataset
-            canvas.dataset.captcha = captchaText;
-            
-            // Draw background
-            ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? "#2c3e50" : "#f8f9fa";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw text
-            ctx.font = "30px Arial";
-            ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? "#ffffff" : "#000000";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            
-            // Add distortion
-            for (let i = 0; i < captchaText.length; i++) {
-                ctx.save();
-                ctx.translate(25 + (i * 20), 25);
-                ctx.rotate((Math.random() - 0.5) * 0.4);
-                ctx.fillText(captchaText[i], 0, 0);
-                ctx.restore();
-            }
-            
-            // Add noise
-            for (let i = 0; i < 100; i++) {
-                ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.2})`;
-                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
-            }
-            
-            // Add lines
-            for (let i = 0; i < 5; i++) {
-                ctx.strokeStyle = `rgba(0, 0, 0, ${Math.random() * 0.5})`;
-                ctx.beginPath();
-                ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-                ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
-                ctx.stroke();
-            }
-        }
-
-        function validateCaptcha(input) {
-            const canvas = document.getElementById("captchaCanvas");
-            return input.toLowerCase() === canvas.dataset.captcha.toLowerCase();
-        }
-
-        document.getElementById("refreshCaptcha").addEventListener("click", function() {
-            generateCaptcha();
-            document.getElementById("captchaInput").value = "";
-            vibrate(50);
         });
 
         // Scan QR Code Functionality
@@ -526,7 +240,6 @@
             const phone = document.getElementById("phone").value;
             if (!phone) {
                 showAlert("Please verify your phone number first.", "error");
-                vibrate(200);
                 return;
             }
 
@@ -557,50 +270,6 @@
             );
         });
 
-        // Generate QR Code Functionality
-        document.getElementById("generateQR").addEventListener("click", function() {
-            const qrData = document.getElementById("qrData").value;
-            if (!qrData) {
-                showAlert("Please enter data to generate QR code", "error");
-                vibrate(200);
-                return;
-            }
-
-            const qrDisplay = document.getElementById("generatedQR");
-            qrDisplay.innerHTML = "";
-            
-            QRCode.toCanvas(qrData, { 
-                width: 200,
-                color: {
-                    dark: document.documentElement.getAttribute('data-theme') === 'dark' ? '#00d4b8' : '#6c63ff',
-                    light: '#00000000'
-                }
-            }, function(error, canvas) {
-                if (error) {
-                    console.error("QR Generation Error:", error);
-                    showAlert("Failed to generate QR code", "error");
-                    vibrate(200);
-                    return;
-                }
-                
-                qrDisplay.appendChild(canvas);
-                document.getElementById("downloadQR").style.display = "inline";
-                generatedQRCode = canvas;
-                vibrate(100);
-            });
-        });
-
-        // Download QR Code
-        document.getElementById("downloadQR").addEventListener("click", function() {
-            if (!generatedQRCode) return;
-            
-            const link = document.createElement('a');
-            link.download = 'generated-qr.png';
-            link.href = generatedQRCode.toDataURL('image/png');
-            link.click();
-            vibrate(50);
-        });
-
         function handleScannedQR(decodedText, phone) {
             document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processing QR code...";
             document.getElementById("scanStatus").className = "status-message info";
@@ -618,12 +287,10 @@
                 if (data.success) {
                     document.getElementById("scanStatus").innerHTML = "<i class='fas fa-check-circle'></i> QR Code scanned successfully!";
                     document.getElementById("scanStatus").className = "status-message success";
-                    vibrate(100);
                     loadUserScans(phone);
                 } else {
                     document.getElementById("scanStatus").innerHTML = `<i class="fas fa-exclamation-circle"></i> ${data.message}`;
                     document.getElementById("scanStatus").className = "status-message error";
-                    vibrate(200);
                     
                     if (data.alreadyUsed) {
                         document.getElementById("scanStatus").innerHTML += "<br>This QR code is already assigned to another user.";
@@ -636,7 +303,6 @@
                 document.getElementById("scanStatus").innerHTML = "<i class='fas fa-times-circle'></i> Failed to scan QR Code. Please try again.";
                 document.getElementById("scanStatus").className = "status-message error";
                 document.getElementById("scanQR").disabled = false;
-                vibrate(200);
             });
         }
 
@@ -681,86 +347,6 @@
             });
         }
 
-        // Session timeout functionality
-        function startSessionTimer() {
-            resetSessionTimer();
-            
-            // Set timeout for session expiration
-            sessionTimeout = setTimeout(() => {
-                showAlert("Your session has expired due to inactivity", "error");
-                document.getElementById("qrSection").classList.add("hidden-section");
-                document.getElementById("otpSection").classList.add("hidden-section");
-                document.getElementById("phoneSection").classList.remove("hidden-section");
-                if (scanner) {
-                    scanner.clear().catch(error => console.error("Failed to clear scanner:", error));
-                    scanner = null;
-                }
-            }, SESSION_TIMEOUT_DURATION);
-            
-            // Set timeout for warning
-            setTimeout(() => {
-                document.getElementById("sessionTimeoutModal").classList.remove("hidden-section");
-                startCountdown();
-            }, SESSION_TIMEOUT_DURATION - INACTIVITY_WARNING_TIME);
-            
-            // Track user activity
-            document.addEventListener("mousemove", resetSessionTimer);
-            document.addEventListener("keypress", resetSessionTimer);
-            document.addEventListener("click", resetSessionTimer);
-        }
-
-        function resetSessionTimer() {
-            clearTimeout(sessionTimeout);
-            clearTimeout(inactivityTimer);
-            
-            // Hide warning modal if visible
-            document.getElementById("sessionTimeoutModal").classList.add("hidden-section");
-            
-            // Restart the timers
-            startSessionTimer();
-        }
-
-        function startCountdown() {
-            let seconds = INACTIVITY_WARNING_TIME / 1000;
-            document.getElementById("sessionCountdown").textContent = seconds;
-            
-            inactivityTimer = setInterval(() => {
-                seconds--;
-                document.getElementById("sessionCountdown").textContent = seconds;
-                
-                if (seconds <= 0) {
-                    clearInterval(inactivityTimer);
-                }
-            }, 1000);
-        }
-
-        document.getElementById("extendSession").addEventListener("click", function() {
-            resetSessionTimer();
-            document.getElementById("sessionTimeoutModal").classList.add("hidden-section");
-            vibrate(50);
-        });
-
-        document.getElementById("logoutNow").addEventListener("click", function() {
-            clearTimeout(sessionTimeout);
-            clearInterval(inactivityTimer);
-            document.getElementById("qrSection").classList.add("hidden-section");
-            document.getElementById("otpSection").classList.add("hidden-section");
-            document.getElementById("phoneSection").classList.remove("hidden-section");
-            document.getElementById("sessionTimeoutModal").classList.add("hidden-section");
-            if (scanner) {
-                scanner.clear().catch(error => console.error("Failed to clear scanner:", error));
-                scanner = null;
-            }
-            vibrate(50);
-        });
-
-        // Vibration feedback
-        function vibrate(duration) {
-            if ("vibrate" in navigator) {
-                navigator.vibrate(duration);
-            }
-        }
-
         function showAlert(message, type) {
             const alertDiv = document.createElement("div");
             alertDiv.className = `alert-message ${type}`;
@@ -772,11 +358,6 @@
                 alertDiv.classList.add("fade-out");
                 setTimeout(() => alertDiv.remove(), 500);
             }, 3000);
-        }
-
-        // Initialize CAPTCHA if needed
-        if (attemptCount >= MAX_ATTEMPTS) {
-            generateCaptcha();
         }
     </script>
 </body>
