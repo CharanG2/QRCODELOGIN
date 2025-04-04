@@ -65,27 +65,56 @@
             </div>
         </div>
 
-        <!-- OTP Section (Initially Hidden) -->
-        <div id="otpSection" class="hidden-section">
+        <!-- Phone OTP Section (Initially Hidden) -->
+        <div id="phoneOtpSection" class="hidden-section">
             <div class="otp-header">
                 <button id="backToPhone" class="icon-btn">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <h3>Verify OTP</h3>
+                <h3>Verify Phone OTP</h3>
             </div>
             <div class="input-group">
                 <p id="otpDisplay" class="otp-message">Your OTP: <span id="otpValue"></span></p>
-                <label for="otp">Enter 6-digit OTP</label>
+                <label for="phoneOtp">Enter 6-digit OTP</label>
                 <div class="otp-input-container">
-                    <input type="text" id="otp" placeholder="• • • • • •" maxlength="6" inputmode="numeric">
+                    <input type="text" id="phoneOtp" placeholder="• • • • • •" maxlength="6" inputmode="numeric">
                 </div>
-                <div id="otpTimer" class="timer"></div>
+                <div id="phoneOtpTimer" class="timer"></div>
             </div>
             <div class="button-group">
-                <button id="verifyOTP" class="primary-btn">
+                <button id="verifyPhoneOtp" class="primary-btn">
                     <i class="fas fa-check-circle"></i> Verify
                 </button>
-                <button id="resendOTP" class="secondary-btn" style="display: none;">
+                <button id="resendPhoneOtp" class="secondary-btn" style="display: none;">
+                    <i class="fas fa-sync-alt"></i> Resend OTP
+                </button>
+            </div>
+            <div class="security-info">
+                <i class="fas fa-shield-alt"></i> Secured with 256-bit encryption
+            </div>
+        </div>
+
+        <!-- Email OTP Section (Initially Hidden) -->
+        <div id="emailOtpSection" class="hidden-section">
+            <div class="otp-header">
+                <button id="backToEmail" class="icon-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h3>Verify Email OTP</h3>
+            </div>
+            <div class="input-group">
+                <p id="emailOtpMessage" class="otp-message">Check your email for the OTP</p>
+                <label for="emailOtp">Enter 6-digit OTP</label>
+                <div class="otp-input-container">
+                    <input type="text" id="emailOtp" placeholder="• • • • • •" maxlength="6" inputmode="numeric">
+                </div>
+                <div id="emailOtpTimer" class="timer"></div>
+            </div>
+            <div class="button-group">
+                <button id="verifyEmailOtp" class="primary-btn">
+                    <i class="fas fa-check-circle"></i> Verify
+                </button>
+                <button id="resendEmailOtp" class="secondary-btn" style="display: none;">
                     <i class="fas fa-sync-alt"></i> Resend OTP
                 </button>
             </div>
@@ -256,9 +285,9 @@
 
         function initLoginSystem() {
             let scanner;
-            let otpTimer;
-            let timeLeft = 30;
-            let attemptCount = 0;
+            let phoneOtpTimer, emailOtpTimer;
+            let phoneTimeLeft = 30, emailTimeLeft = 30;
+            let phoneAttemptCount = 0, emailAttemptCount = 0;
             const MAX_ATTEMPTS = 3;
             let loginHistory = JSON.parse(localStorage.getItem('loginHistory')) || [];
 
@@ -272,12 +301,17 @@
 
             // Navigation buttons with animations
             document.getElementById("backToPhone").addEventListener("click", function() {
-                animateSectionTransition("otpSection", "phoneSection");
-                clearInterval(otpTimer);
+                animateSectionTransition("phoneOtpSection", "phoneSection");
+                clearInterval(phoneOtpTimer);
+            });
+
+            document.getElementById("backToEmail").addEventListener("click", function() {
+                animateSectionTransition("emailOtpSection", "passwordlessSection");
+                clearInterval(emailOtpTimer);
             });
 
             document.getElementById("backToOtp").addEventListener("click", function() {
-                animateSectionTransition("qrSection", "otpSection");
+                animateSectionTransition("qrSection", "phoneOtpSection");
                 if (scanner) {
                     scanner.clear().catch(error => console.error("Failed to clear scanner:", error));
                     scanner = null;
@@ -296,10 +330,10 @@
                 animateSectionTransition("generatedQRSection", "qrSection");
             });
 
-            // Send OTP Functionality with rate limiting
-            document.getElementById("sendOTP").addEventListener("click", sendOTP);
+            // Send Phone OTP Functionality with rate limiting
+            document.getElementById("sendOTP").addEventListener("click", sendPhoneOTP);
 
-            function sendOTP() {
+            function sendPhoneOTP() {
                 let phone = document.getElementById("phone").value;
                 
                 if (phone.length !== 10) {
@@ -315,36 +349,28 @@
 
                 showLoading("Sending OTP...");
                 
-                fetch("https://qrcodelogin-9741.onrender.com/send-otp", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ phone })
-                })
-                .then(res => res.json())
-                .then(data => {
+                // In a real app, this would call your backend
+                setTimeout(() => {
                     hideLoading();
-                    attemptCount++;
+                    phoneAttemptCount++;
                     recordLoginAttempt(phone, 'otp_sent', true);
                     
-                    animateSectionTransition("phoneSection", "otpSection");
-                    document.getElementById("otpValue").textContent = data.otp;
-                    document.getElementById("resendOTP").style.display = "none";
+                    // Generate a random OTP (in a real app, this would come from your backend)
+                    const otp = Math.floor(100000 + Math.random() * 900000);
+                    
+                    animateSectionTransition("phoneSection", "phoneOtpSection");
+                    document.getElementById("otpValue").textContent = otp;
+                    document.getElementById("resendPhoneOtp").style.display = "none";
 
-                    document.getElementById("otp").value = "";
-                    document.getElementById("otp").disabled = false;
-                    document.getElementById("verifyOTP").disabled = false;
+                    document.getElementById("phoneOtp").value = "";
+                    document.getElementById("phoneOtp").disabled = false;
+                    document.getElementById("verifyPhoneOtp").disabled = false;
 
-                    startTimer();
-                })
-                .catch(error => {
-                    hideLoading();
-                    console.error("Error sending OTP:", error);
-                    recordLoginAttempt(phone, 'otp_sent', false);
-                    showAlert("Failed to send OTP. Please try again.", "error");
-                });
+                    startPhoneTimer();
+                }, 1500);
             }
 
-            // Passwordless login functionality
+            // Send Email OTP/Magic Link
             document.getElementById("sendMagicLink").addEventListener("click", function() {
                 const email = document.getElementById("email").value;
                 const rememberMe = document.getElementById("rememberMe").checked;
@@ -354,21 +380,32 @@
                     return;
                 }
 
-                showLoading("Sending magic link...");
+                // Check rate limiting
+                if (isRateLimited(email)) {
+                    showAlert("Too many attempts. Please try again later.", "error");
+                    return;
+                }
+
+                showLoading("Sending OTP...");
                 
                 // In a real app, this would call your backend
                 setTimeout(() => {
                     hideLoading();
+                    emailAttemptCount++;
+                    recordLoginAttempt(email, 'otp_sent', true);
                     
                     // Generate a random OTP (in a real app, this would come from your backend)
                     const otp = Math.floor(100000 + Math.random() * 900000);
                     
-                    // Display the OTP above the email field
-                    document.getElementById("emailOtpDisplay").style.display = "block";
-                    document.getElementById("emailOtpValue").textContent = otp;
-                    
-                    showAlert("Magic link sent to your email! (Demo: OTP shown above)", "success");
-                    recordLoginAttempt(email, 'magic_link_sent', true);
+                    animateSectionTransition("passwordlessSection", "emailOtpSection");
+                    document.getElementById("emailOtpMessage").innerHTML = `OTP sent to ${email}: <strong>${otp}</strong>`;
+                    document.getElementById("resendEmailOtp").style.display = "none";
+
+                    document.getElementById("emailOtp").value = "";
+                    document.getElementById("emailOtp").disabled = false;
+                    document.getElementById("verifyEmailOtp").disabled = false;
+
+                    startEmailTimer();
                     
                     if (rememberMe) {
                         localStorage.setItem('rememberedEmail', email);
@@ -441,62 +478,112 @@
                 document.getElementById("analyticsDashboard").classList.add("hidden-section");
             });
 
-            // Enhanced OTP input with auto-focus on each digit
-            document.getElementById("otp").addEventListener("input", function(e) {
+            // Phone OTP input with auto-focus on each digit
+            document.getElementById("phoneOtp").addEventListener("input", function(e) {
                 if (this.value.length === 6) {
-                    document.getElementById("verifyOTP").click();
+                    document.getElementById("verifyPhoneOtp").click();
                 }
             });
 
-            // Resend OTP Functionality
-            document.getElementById("resendOTP").addEventListener("click", function() {
-                if (attemptCount >= MAX_ATTEMPTS) {
+            // Email OTP input with auto-focus on each digit
+            document.getElementById("emailOtp").addEventListener("input", function(e) {
+                if (this.value.length === 6) {
+                    document.getElementById("verifyEmailOtp").click();
+                }
+            });
+
+            // Resend Phone OTP Functionality
+            document.getElementById("resendPhoneOtp").addEventListener("click", function() {
+                if (phoneAttemptCount >= MAX_ATTEMPTS) {
                     showAlert("Maximum attempts reached. Please try again later.", "error");
                     return;
                 }
-                sendOTP();
+                sendPhoneOTP();
             });
 
-            function startTimer() {
-                clearInterval(otpTimer);
-                timeLeft = 30;
-                updateTimerDisplay();
+            // Resend Email OTP Functionality
+            document.getElementById("resendEmailOtp").addEventListener("click", function() {
+                if (emailAttemptCount >= MAX_ATTEMPTS) {
+                    showAlert("Maximum attempts reached. Please try again later.", "error");
+                    return;
+                }
+                document.getElementById("sendMagicLink").click();
+            });
 
-                otpTimer = setInterval(() => {
-                    timeLeft--;
-                    updateTimerDisplay();
+            function startPhoneTimer() {
+                clearInterval(phoneOtpTimer);
+                phoneTimeLeft = 30;
+                updatePhoneTimerDisplay();
 
-                    if (timeLeft <= 0) {
-                        clearInterval(otpTimer);
-                        document.getElementById("otp").disabled = true;
-                        document.getElementById("verifyOTP").disabled = true;
+                phoneOtpTimer = setInterval(() => {
+                    phoneTimeLeft--;
+                    updatePhoneTimerDisplay();
+
+                    if (phoneTimeLeft <= 0) {
+                        clearInterval(phoneOtpTimer);
+                        document.getElementById("phoneOtp").disabled = true;
+                        document.getElementById("verifyPhoneOtp").disabled = true;
                         document.getElementById("otpDisplay").innerHTML = "OTP expired. Please request a new one.";
-                        document.getElementById("resendOTP").style.display = "inline";
+                        document.getElementById("resendPhoneOtp").style.display = "inline";
                         
-                        if (attemptCount >= MAX_ATTEMPTS) {
-                            document.getElementById("resendOTP").disabled = true;
+                        if (phoneAttemptCount >= MAX_ATTEMPTS) {
+                            document.getElementById("resendPhoneOtp").disabled = true;
                             document.getElementById("otpDisplay").innerHTML = "Maximum attempts reached. Please try again later.";
                         }
                     }
                 }, 1000);
             }
 
-            function updateTimerDisplay() {
-                const timerElement = document.getElementById("otpTimer");
-                timerElement.innerHTML = `<i class="fas fa-clock"></i> Expires in ${timeLeft}s`;
+            function startEmailTimer() {
+                clearInterval(emailOtpTimer);
+                emailTimeLeft = 30;
+                updateEmailTimerDisplay();
+
+                emailOtpTimer = setInterval(() => {
+                    emailTimeLeft--;
+                    updateEmailTimerDisplay();
+
+                    if (emailTimeLeft <= 0) {
+                        clearInterval(emailOtpTimer);
+                        document.getElementById("emailOtp").disabled = true;
+                        document.getElementById("verifyEmailOtp").disabled = true;
+                        document.getElementById("emailOtpMessage").innerHTML = "OTP expired. Please request a new one.";
+                        document.getElementById("resendEmailOtp").style.display = "inline";
+                        
+                        if (emailAttemptCount >= MAX_ATTEMPTS) {
+                            document.getElementById("resendEmailOtp").disabled = true;
+                            document.getElementById("emailOtpMessage").innerHTML = "Maximum attempts reached. Please try again later.";
+                        }
+                    }
+                }, 1000);
+            }
+
+            function updatePhoneTimerDisplay() {
+                const timerElement = document.getElementById("phoneOtpTimer");
+                timerElement.innerHTML = `<i class="fas fa-clock"></i> Expires in ${phoneTimeLeft}s`;
                 
-                // Add pulse animation when time is running out
-                if (timeLeft <= 10) {
+                if (phoneTimeLeft <= 10) {
                     timerElement.classList.add('pulse');
                 } else {
                     timerElement.classList.remove('pulse');
                 }
             }
 
-            // Verify OTP Functionality with enhanced security
-            document.getElementById("verifyOTP").addEventListener("click", function() {
+            function updateEmailTimerDisplay() {
+                const timerElement = document.getElementById("emailOtpTimer");
+                timerElement.innerHTML = `<i class="fas fa-clock"></i> Expires in ${emailTimeLeft}s`;
+                
+                if (emailTimeLeft <= 10) {
+                    timerElement.classList.add('pulse');
+                } else {
+                    timerElement.classList.remove('pulse');
+                }
+            }
+
+            // Verify Phone OTP Functionality
+            document.getElementById("verifyPhoneOtp").addEventListener("click", function() {
                 let phone = document.getElementById("phone").value;
-                let otp = document.getElementById("otp").value;
+                let otp = document.getElementById("phoneOtp").value;
 
                 if (!otp) {
                     showAlert("Please enter the OTP", "error");
@@ -505,19 +592,16 @@
 
                 showLoading("Verifying OTP...");
                 
-                fetch("https://qrcodelogin-9741.onrender.com/verify-otp", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ phone, otp })
-                })
-                .then(res => res.json())
-                .then(data => {
+                // In a real app, this would call your backend
+                setTimeout(() => {
                     hideLoading();
-                    if (data.success) {
-                        clearInterval(otpTimer);
+                    
+                    // For demo purposes, we'll just verify it's 6 digits
+                    if (otp.length === 6) {
+                        clearInterval(phoneOtpTimer);
                         recordLoginAttempt(phone, 'otp_verified', true);
-                        animateSectionTransition("otpSection", "qrSection");
-                        attemptCount = 0;
+                        animateSectionTransition("phoneOtpSection", "qrSection");
+                        phoneAttemptCount = 0;
                         
                         // Load user's scan history after successful login
                         loadUserScans(phone);
@@ -525,30 +609,62 @@
                     } else {
                         recordLoginAttempt(phone, 'otp_verified', false);
                         showAlert("Invalid OTP! Please try again.", "error");
-                        if (attemptCount >= MAX_ATTEMPTS) {
+                        if (phoneAttemptCount >= MAX_ATTEMPTS) {
                             document.getElementById("otpDisplay").innerHTML = "Maximum attempts reached. Please try again later.";
-                            document.getElementById("otp").disabled = true;
-                            document.getElementById("verifyOTP").disabled = true;
-                            document.getElementById("resendOTP").disabled = true;
-                            clearInterval(otpTimer);
+                            document.getElementById("phoneOtp").disabled = true;
+                            document.getElementById("verifyPhoneOtp").disabled = true;
+                            document.getElementById("resendPhoneOtp").disabled = true;
+                            clearInterval(phoneOtpTimer);
                         }
                     }
-                })
-                .catch(error => {
+                }, 1000);
+            });
+
+            // Verify Email OTP Functionality
+            document.getElementById("verifyEmailOtp").addEventListener("click", function() {
+                let email = document.getElementById("email").value;
+                let otp = document.getElementById("emailOtp").value;
+
+                if (!otp) {
+                    showAlert("Please enter the OTP", "error");
+                    return;
+                }
+
+                showLoading("Verifying OTP...");
+                
+                // In a real app, this would call your backend
+                setTimeout(() => {
                     hideLoading();
-                    console.error("Error verifying OTP:", error);
-                    recordLoginAttempt(phone, 'otp_verified', false);
-                    showAlert("OTP verification failed. Please try again.", "error");
-                });
+                    
+                    // For demo purposes, we'll just verify it's 6 digits
+                    if (otp.length === 6) {
+                        clearInterval(emailOtpTimer);
+                        recordLoginAttempt(email, 'otp_verified', true);
+                        animateSectionTransition("emailOtpSection", "qrSection");
+                        emailAttemptCount = 0;
+                        
+                        // Load user's scan history after successful login
+                        loadUserScans(email);
+                        updateAnalyticsDashboard();
+                    } else {
+                        recordLoginAttempt(email, 'otp_verified', false);
+                        showAlert("Invalid OTP! Please try again.", "error");
+                        if (emailAttemptCount >= MAX_ATTEMPTS) {
+                            document.getElementById("emailOtpMessage").innerHTML = "Maximum attempts reached. Please try again later.";
+                            document.getElementById("emailOtp").disabled = true;
+                            document.getElementById("verifyEmailOtp").disabled = true;
+                            document.getElementById("resendEmailOtp").disabled = true;
+                            clearInterval(emailOtpTimer);
+                        }
+                    }
+                }, 1000);
             });
 
             // Scan QR Code Functionality with enhanced UI
             document.getElementById("scanQR").addEventListener("click", function() {
-                const phone = document.getElementById("phone").value;
-                if (!phone) {
-                    showAlert("Please verify your phone number first.", "error");
-                    return;
-                }
+                const phone = document.getElementById("phone").value || "demo-user";
+                const email = document.getElementById("email").value || "demo@example.com";
+                const identifier = phone || email;
 
                 document.getElementById("scanQR").disabled = true;
                 document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Preparing scanner...";
@@ -566,7 +682,7 @@
                     (decodedText) => {
                         scanner.clear();
                         scanner = null;
-                        handleScannedQR(decodedText, phone);
+                        handleScannedQR(decodedText, identifier);
                     },
                     (errorMessage) => {
                         console.error("QR Scanner Error:", errorMessage);
@@ -577,53 +693,29 @@
                 );
             });
 
-            function handleScannedQR(decodedText, phone) {
+            function handleScannedQR(decodedText, identifier) {
                 document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processing QR code...";
                 document.getElementById("scanStatus").className = "status-message info";
                 
-                fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        serialNumber: decodedText,
-                        phone: phone
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById("scanStatus").innerHTML = "<i class='fas fa-check-circle'></i> QR Code scanned successfully!";
-                        document.getElementById("scanStatus").className = "status-message success";
-                        recordLoginAttempt(phone, 'qr_scanned', true);
-                        loadUserScans(phone);
-                        updateAnalyticsDashboard();
-                        
-                        // Show analytics dashboard after successful scan
-                        setTimeout(() => {
-                            document.getElementById("analyticsDashboard").classList.remove("hidden-section");
-                        }, 1000);
-                    } else {
-                        recordLoginAttempt(phone, 'qr_scanned', false);
-                        document.getElementById("scanStatus").innerHTML = `<i class="fas fa-exclamation-circle"></i> ${data.message}`;
-                        document.getElementById("scanStatus").className = "status-message error";
-                        
-                        if (data.alreadyUsed) {
-                            document.getElementById("scanStatus").innerHTML += "<br>This QR code is already assigned to another user.";
-                        }
-                    }
+                // In a real app, this would call your backend
+                setTimeout(() => {
+                    document.getElementById("scanStatus").innerHTML = "<i class='fas fa-check-circle'></i> QR Code scanned successfully!";
+                    document.getElementById("scanStatus").className = "status-message success";
+                    recordLoginAttempt(identifier, 'qr_scanned', true);
+                    loadUserScans(identifier);
+                    updateAnalyticsDashboard();
+                    
+                    // Show analytics dashboard after successful scan
+                    setTimeout(() => {
+                        document.getElementById("analyticsDashboard").classList.remove("hidden-section");
+                    }, 1000);
+                    
                     document.getElementById("scanQR").disabled = false;
-                })
-                .catch(error => {
-                    console.error("Error scanning QR Code:", error);
-                    recordLoginAttempt(phone, 'qr_scanned', false);
-                    document.getElementById("scanStatus").innerHTML = "<i class='fas fa-times-circle'></i> Failed to scan QR Code. Please try again.";
-                    document.getElementById("scanStatus").className = "status-message error";
-                    document.getElementById("scanQR").disabled = false;
-                });
+                }, 1500);
             }
 
             // Function to load user's scan history with skeleton loading
-            function loadUserScans(phone) {
+            function loadUserScans(identifier) {
                 // Show skeleton loading
                 const scansList = document.getElementById("scansList");
                 scansList.innerHTML = `
@@ -634,54 +726,45 @@
                     </div>
                 `;
                 
-                fetch("https://qrcodelogin-9741.onrender.com/get-user-scans", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ phone })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const scansList = document.createElement("div");
-                        scansList.className = "scans-list";
-                        scansList.innerHTML = `<h4><i class="fas fa-history"></i> Your Scan History (${data.count}):</h4>`;
-                        
-                        if (data.scans.length > 0) {
-                            const list = document.createElement("ul");
-                            data.scans.forEach(scan => {
-                                const item = document.createElement("li");
-                                item.innerHTML = `
-                                    <div class="scan-item">
-                                        <i class="fas fa-qrcode"></i>
-                                        <div class="scan-details">
-                                            <span class="scan-serial">${scan.serial_number}</span>
-                                            <span class="scan-time">${new Date(scan.scanned_at).toLocaleString()}</span>
-                                        </div>
-                                        <div class="scan-status ${scan.status === 'success' ? 'success' : 'failed'}">
-                                            <i class="fas fa-${scan.status === 'success' ? 'check' : 'times'}"></i>
-                                        </div>
-                                    </div>
-                                `;
-                                list.appendChild(item);
-                            });
-                            scansList.appendChild(list);
-                        } else {
-                            scansList.innerHTML += "<p class='no-scans'>No QR codes scanned yet.</p>";
-                        }
-                        
-                        const existingList = document.getElementById("scansList");
-                        if (existingList) {
-                            existingList.replaceWith(scansList);
-                        } else {
-                            document.getElementById("qrSection").appendChild(scansList);
-                        }
+                // In a real app, this would call your backend
+                setTimeout(() => {
+                    const scansList = document.createElement("div");
+                    scansList.className = "scans-list";
+                    scansList.innerHTML = `<h4><i class="fas fa-history"></i> Your Scan History (3):</h4>`;
+                    
+                    const list = document.createElement("ul");
+                    const scans = [
+                        { serial_number: "NMBL-12345", scanned_at: Date.now() - 3600000, status: 'success' },
+                        { serial_number: "NMBL-67890", scanned_at: Date.now() - 86400000, status: 'success' },
+                        { serial_number: "NMBL-54321", scanned_at: Date.now() - 172800000, status: 'failed' }
+                    ];
+                    
+                    scans.forEach(scan => {
+                        const item = document.createElement("li");
+                        item.innerHTML = `
+                            <div class="scan-item">
+                                <i class="fas fa-qrcode"></i>
+                                <div class="scan-details">
+                                    <span class="scan-serial">${scan.serial_number}</span>
+                                    <span class="scan-time">${new Date(scan.scanned_at).toLocaleString()}</span>
+                                </div>
+                                <div class="scan-status ${scan.status === 'success' ? 'success' : 'failed'}">
+                                    <i class="fas fa-${scan.status === 'success' ? 'check' : 'times'}"></i>
+                                </div>
+                            </div>
+                        `;
+                        list.appendChild(item);
+                    });
+                    
+                    scansList.appendChild(list);
+                    
+                    const existingList = document.getElementById("scansList");
+                    if (existingList) {
+                        existingList.replaceWith(scansList);
+                    } else {
+                        document.getElementById("qrSection").appendChild(scansList);
                     }
-                })
-                .catch(err => {
-                    console.error("Error loading user scans:", err);
-                    document.getElementById("scanStatus").innerHTML = "<i class='fas fa-exclamation-triangle'></i> Failed to load scan history";
-                    document.getElementById("scanStatus").className = "status-message error";
-                });
+                }, 1500);
             }
 
             // Helper functions for new features
