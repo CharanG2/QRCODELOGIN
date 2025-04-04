@@ -50,6 +50,7 @@
         <!-- Passwordless Login Section -->
         <div id="passwordlessSection" class="login-section">
             <div class="input-group">
+                <p id="emailOtpDisplay" class="otp-message" style="display: none;">Your OTP: <span id="emailOtpValue"></span></p>
                 <label for="email">Enter Email</label>
                 <input type="email" id="email" placeholder="your@email.com" required>
             </div>
@@ -358,7 +359,15 @@
                 // In a real app, this would call your backend
                 setTimeout(() => {
                     hideLoading();
-                    showAlert("Magic link sent to your email!", "success");
+                    
+                    // Generate a random OTP (in a real app, this would come from your backend)
+                    const otp = Math.floor(100000 + Math.random() * 900000);
+                    
+                    // Display the OTP above the email field
+                    document.getElementById("emailOtpDisplay").style.display = "block";
+                    document.getElementById("emailOtpValue").textContent = otp;
+                    
+                    showAlert("Magic link sent to your email! (Demo: OTP shown above)", "success");
                     recordLoginAttempt(email, 'magic_link_sent', true);
                     
                     if (rememberMe) {
