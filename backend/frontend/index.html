@@ -290,6 +290,8 @@
             let phoneAttemptCount = 0, emailAttemptCount = 0;
             const MAX_ATTEMPTS = 3;
             let loginHistory = JSON.parse(localStorage.getItem('loginHistory')) || [];
+            let lastScannedCode = null; // Track last scanned QR code
+            let isProcessingScan = false; // Flag to prevent multiple processing
 
             // Enhanced phone number input validation
             document.getElementById("phone").addEventListener("input", function(e) {
@@ -660,7 +662,7 @@
                 }, 1000);
             });
 
-            // Scan QR Code Functionality with enhanced UI
+            // Scan QR Code Functionality with duplicate prevention
             document.getElementById("scanQR").addEventListener("click", function() {
                 const phone = document.getElementById("phone").value || "demo-user";
                 const email = document.getElementById("email").value || "demo@example.com";
@@ -680,15 +682,31 @@
 
                 scanner.render(
                     (decodedText) => {
-                        scanner.clear();
-                        scanner = null;
-                        handleScannedQR(decodedText, identifier);
+                        // Prevent processing if already processing or if this is the same code
+                        if (isProcessingScan || decodedText === lastScannedCode) {
+                            return;
+                        }
+
+                        // Set flags to prevent duplicate processing
+                        isProcessingScan = true;
+                        lastScannedCode = decodedText;
+
+                        // Clear the scanner immediately after first successful scan
+                        scanner.clear().then(() => {
+                            scanner = null;
+                            handleScannedQR(decodedText, identifier);
+                        }).catch(error => {
+                            console.error("Failed to clear scanner:", error);
+                            scanner = null;
+                            handleScannedQR(decodedText, identifier);
+                        });
                     },
                     (errorMessage) => {
                         console.error("QR Scanner Error:", errorMessage);
                         document.getElementById("scanStatus").innerHTML = `<i class="fas fa-exclamation-triangle"></i> Scanner error: ${errorMessage}`;
                         document.getElementById("scanStatus").className = "status-message error";
                         document.getElementById("scanQR").disabled = false;
+                        isProcessingScan = false;
                     }
                 );
             });
@@ -711,6 +729,7 @@
                     }, 1000);
                     
                     document.getElementById("scanQR").disabled = false;
+                    isProcessingScan = false;
                 }, 1500);
             }
 
