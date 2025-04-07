@@ -3,6 +3,8 @@ let otpTimer;
 let timeLeft = 30;
 let attemptCount = 0;
 const MAX_ATTEMPTS = 3;
+let lastScannedCode = null;
+let isProcessingScan = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Phone number input validation
@@ -157,9 +159,22 @@ function startScanner() {
 
     scanner.render(
         (decodedText) => {
-            scanner.clear();
-            scanner = null;
-            handleScannedQR(decodedText, phone);
+            // Prevent processing if already processing or if this is the same code
+            if (isProcessingScan || decodedText === lastScannedCode) {
+                return;
+            }
+
+            isProcessingScan = true;
+            lastScannedCode = decodedText;
+            
+            scanner.clear().then(() => {
+                scanner = null;
+                handleScannedQR(decodedText, phone);
+            }).catch(error => {
+                console.error("Failed to clear scanner:", error);
+                scanner = null;
+                handleScannedQR(decodedText, phone);
+            });
         },
         (errorMessage) => {
             console.error("QR Scanner Error:", errorMessage);
@@ -167,6 +182,7 @@ function startScanner() {
             document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
             document.getElementById("scanStatus").style.color = "#c62828";
             document.getElementById("scanQR").disabled = false;
+            isProcessingScan = false;
         }
     );
 }
@@ -192,15 +208,20 @@ function handleScannedQR(decodedText, phone) {
             document.getElementById("scanStatus").style.color = "#2e7d32";
             loadUserScans(phone);
         } else {
-            document.getElementById("scanStatus").innerHTML = data.message;
-            document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
-            document.getElementById("scanStatus").style.color = "#c62828";
+            let errorMessage = data.message;
             
             if (data.alreadyUsed) {
-                document.getElementById("scanStatus").innerHTML += "<br>This QR code is already assigned to another user.";
+                errorMessage += `<br>Scanned on: ${new Date(data.scanTimestamp).toLocaleString()}`;
+            } else if (data.duplicate) {
+                errorMessage += `<br>You scanned this on: ${new Date(data.scanTimestamp).toLocaleString()}`;
             }
+            
+            document.getElementById("scanStatus").innerHTML = errorMessage;
+            document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
+            document.getElementById("scanStatus").style.color = "#c62828";
         }
         document.getElementById("scanQR").disabled = false;
+        isProcessingScan = false;
     })
     .catch(error => {
         console.error("Error scanning QR Code:", error);
@@ -208,6 +229,7 @@ function handleScannedQR(decodedText, phone) {
         document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
         document.getElementById("scanStatus").style.color = "#c62828";
         document.getElementById("scanQR").disabled = false;
+        isProcessingScan = false;
     });
 }
 
