@@ -145,7 +145,7 @@ function startScanner() {
     }
 
     document.getElementById("scanQR").disabled = true;
-    document.getElementById("scanStatus").innerHTML = "Preparing scanner...";
+    document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Preparing scanner...";
     document.getElementById("scanStatus").className = "status-message info";
 
     if (!scanner) {
@@ -177,7 +177,7 @@ function startScanner() {
         },
         (errorMessage) => {
             console.error("QR Scanner Error:", errorMessage);
-            document.getElementById("scanStatus").innerHTML = "Scanner error: " + errorMessage;
+            document.getElementById("scanStatus").innerHTML = `<i class="fas fa-exclamation-triangle"></i> Scanner error: ${errorMessage}`;
             document.getElementById("scanStatus").className = "status-message error";
             document.getElementById("scanQR").disabled = false;
             isProcessingScan = false;
