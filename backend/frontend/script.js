@@ -5,6 +5,8 @@ let attemptCount = 0;
 const MAX_ATTEMPTS = 3;
 let lastScannedCode = null;
 let isProcessingScan = false;
+let scanAttempts = 0;
+const MAX_SCAN_ATTEMPTS = 5;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Phone number input validation
@@ -144,41 +146,81 @@ function startScanner() {
         return;
     }
 
+    // Reset scan attempts counter
+    scanAttempts = 0;
+    
     document.getElementById("scanQR").disabled = true;
     document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Preparing scanner...";
     document.getElementById("scanStatus").className = "status-message info";
 
-    if (!scanner) {
-        scanner = new Html5QrcodeScanner("qr-video", { 
-            fps: 10, 
-            qrbox: 250,
-            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    // Stop any existing scanner first
+    if (scanner) {
+        scanner.clear().catch(error => {
+            console.log("Clearing previous scanner:", error);
         });
     }
 
+    // Initialize scanner with better configuration
+    scanner = new Html5QrcodeScanner("qr-video", {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+    });
+
     scanner.render(
         (decodedText) => {
-            // Prevent processing if already processing or if this is the same code
-            if (isProcessingScan || decodedText === lastScannedCode) {
-                return;
-            }
-
+            if (isProcessingScan || decodedText === lastScannedCode) return;
+            
             isProcessingScan = true;
             lastScannedCode = decodedText;
             
             scanner.clear().then(() => {
-                scanner = null;
                 handleScannedQR(decodedText, phone);
             }).catch(error => {
-                console.error("Failed to clear scanner:", error);
-                scanner = null;
+                console.log("Scanner clear error:", error);
                 handleScannedQR(decodedText, phone);
             });
         },
         (errorMessage) => {
-            console.error("QR Scanner Error:", errorMessage);
-            document.getElementById("scanStatus").innerHTML = `<i class="fas fa-exclamation-triangle"></i> Scanner error: ${errorMessage}`;
-            document.getElementById("scanStatus").className = "status-message error";
+            scanAttempts++;
+            
+            // Filter out common non-error messages
+            if (!errorMessage.includes("NotFoundException") && 
+                !errorMessage.includes("No MultiFormat Readers")) {
+                console.log("Scanner message:", errorMessage);
+                return;
+            }
+            
+            // Don't show error if we've reached max attempts
+            if (scanAttempts >= MAX_SCAN_ATTEMPTS) {
+                document.getElementById("scanStatus").innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Having trouble scanning? Try better lighting or a different QR code.
+                    <button id="retryScan" class="secondary-btn small">
+                        <i class="fas fa-sync-alt"></i> Try Again
+                    </button>
+                `;
+                document.getElementById("scanStatus").className = "status-message warning";
+                
+                // Add event listener for retry button
+                document.getElementById("retryScan").addEventListener("click", function() {
+                    startScanner();
+                });
+                
+                document.getElementById("scanQR").disabled = false;
+                isProcessingScan = false;
+                return;
+            }
+            
+            document.getElementById("scanStatus").innerHTML = `
+                <i class="fas fa-spinner fa-spin"></i> 
+                Aligning QR code... (${scanAttempts}/${MAX_SCAN_ATTEMPTS})
+                <div class="scan-tip">Tip: Hold steady and ensure QR code is well-lit</div>
+            `;
+            document.getElementById("scanStatus").className = "status-message info";
+            
             document.getElementById("scanQR").disabled = false;
             isProcessingScan = false;
         }
@@ -186,7 +228,7 @@ function startScanner() {
 }
 
 function handleScannedQR(decodedText, phone) {
-    document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processing QR code...";
+    document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Verifying QR code...";
     document.getElementById("scanStatus").className = "status-message info";
     
     fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
@@ -215,7 +257,7 @@ function handleScannedQR(decodedText, phone) {
             let message = `${icon} ${data.message}`;
             
             if (data.scanTimestamp) {
-                message += `<br><small>Scanned on: ${new Date(data.scanTimestamp).toLocaleString()}</small>`;
+                message += `<br><small>Previously scanned: ${new Date(data.scanTimestamp).toLocaleString()}</small>`;
             }
             
             document.getElementById("scanStatus").innerHTML = message;
@@ -225,8 +267,8 @@ function handleScannedQR(decodedText, phone) {
         isProcessingScan = false;
     })
     .catch(error => {
-        console.error("Error scanning QR Code:", error);
-        document.getElementById("scanStatus").innerHTML = "<i class='fas fa-exclamation-circle'></i> Failed to scan QR Code. Please try again.";
+        console.error("Scan verification error:", error);
+        document.getElementById("scanStatus").innerHTML = "<i class='fas fa-exclamation-circle'></i> Failed to verify scan. Please try again.";
         document.getElementById("scanStatus").className = "status-message error";
         document.getElementById("scanQR").disabled = false;
         isProcessingScan = false;
