@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Resend OTP Functionality
     document.getElementById("resendOTP").addEventListener("click", function() {
         if (attemptCount >= MAX_ATTEMPTS) {
-            alert("Maximum attempts reached. Please try again later.");
+            showAlert("Maximum attempts reached. Please try again later.", "error");
             return;
         }
         sendOTP();
@@ -38,7 +38,7 @@ function sendOTP() {
     let phone = document.getElementById("phone").value;
     
     if (phone.length !== 10) {
-        alert("Please enter exactly 10-digit phone number.");
+        showAlert("Please enter exactly 10-digit phone number.", "error");
         return;
     }
 
@@ -66,7 +66,7 @@ function sendOTP() {
     })
     .catch(error => {
         console.error("Error sending OTP:", error);
-        alert("Failed to send OTP. Try again.");
+        showAlert("Failed to send OTP. Try again.", "error");
     });
 }
 
@@ -103,7 +103,7 @@ function verifyOTP() {
     let otp = document.getElementById("otp").value;
 
     if (!otp) {
-        alert("Please enter the OTP");
+        showAlert("Please enter the OTP", "error");
         return;
     }
 
@@ -121,7 +121,7 @@ function verifyOTP() {
             attemptCount = 0;
             loadUserScans(phone);
         } else {
-            alert("Invalid OTP!");
+            showAlert("Invalid OTP!", "error");
             if (attemptCount >= MAX_ATTEMPTS) {
                 document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
                 document.getElementById("otp").disabled = true;
@@ -133,21 +133,20 @@ function verifyOTP() {
     })
     .catch(error => {
         console.error("Error verifying OTP:", error);
-        alert("OTP verification failed.");
+        showAlert("OTP verification failed.", "error");
     });
 }
 
 function startScanner() {
     const phone = document.getElementById("phone").value;
     if (!phone) {
-        alert("Please verify your phone number first.");
+        showAlert("Please verify your phone number first.", "error");
         return;
     }
 
     document.getElementById("scanQR").disabled = true;
     document.getElementById("scanStatus").innerHTML = "Preparing scanner...";
-    document.getElementById("scanStatus").style.backgroundColor = "#e6f7ff";
-    document.getElementById("scanStatus").style.color = "#0066cc";
+    document.getElementById("scanStatus").className = "status-message info";
 
     if (!scanner) {
         scanner = new Html5QrcodeScanner("qr-video", { 
@@ -179,8 +178,7 @@ function startScanner() {
         (errorMessage) => {
             console.error("QR Scanner Error:", errorMessage);
             document.getElementById("scanStatus").innerHTML = "Scanner error: " + errorMessage;
-            document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
-            document.getElementById("scanStatus").style.color = "#c62828";
+            document.getElementById("scanStatus").className = "status-message error";
             document.getElementById("scanQR").disabled = false;
             isProcessingScan = false;
         }
@@ -188,9 +186,8 @@ function startScanner() {
 }
 
 function handleScannedQR(decodedText, phone) {
-    document.getElementById("scanStatus").innerHTML = "Processing QR code...";
-    document.getElementById("scanStatus").style.backgroundColor = "#e6f7ff";
-    document.getElementById("scanStatus").style.color = "#0066cc";
+    document.getElementById("scanStatus").innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processing QR code...";
+    document.getElementById("scanStatus").className = "status-message info";
     
     fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
         method: "POST",
@@ -203,31 +200,34 @@ function handleScannedQR(decodedText, phone) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            document.getElementById("scanStatus").innerHTML = "QR Code scanned successfully!";
-            document.getElementById("scanStatus").style.backgroundColor = "#e8f5e9";
-            document.getElementById("scanStatus").style.color = "#2e7d32";
+            document.getElementById("scanStatus").innerHTML = "<i class='fas fa-check-circle'></i> QR Code scanned successfully!";
+            document.getElementById("scanStatus").className = "status-message success";
             loadUserScans(phone);
         } else {
-            let errorMessage = data.message;
+            let statusClass = "error";
+            let icon = "<i class='fas fa-exclamation-circle'></i>";
             
-            if (data.alreadyUsed) {
-                errorMessage += `<br>Scanned on: ${new Date(data.scanTimestamp).toLocaleString()}`;
-            } else if (data.duplicate) {
-                errorMessage += `<br>You scanned this on: ${new Date(data.scanTimestamp).toLocaleString()}`;
+            if (data.status === "warning") {
+                statusClass = "warning";
+                icon = "<i class='fas fa-exclamation-triangle'></i>";
             }
             
-            document.getElementById("scanStatus").innerHTML = errorMessage;
-            document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
-            document.getElementById("scanStatus").style.color = "#c62828";
+            let message = `${icon} ${data.message}`;
+            
+            if (data.scanTimestamp) {
+                message += `<br><small>Scanned on: ${new Date(data.scanTimestamp).toLocaleString()}</small>`;
+            }
+            
+            document.getElementById("scanStatus").innerHTML = message;
+            document.getElementById("scanStatus").className = `status-message ${statusClass}`;
         }
         document.getElementById("scanQR").disabled = false;
         isProcessingScan = false;
     })
     .catch(error => {
         console.error("Error scanning QR Code:", error);
-        document.getElementById("scanStatus").innerHTML = "Failed to scan QR Code. Please try again.";
-        document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
-        document.getElementById("scanStatus").style.color = "#c62828";
+        document.getElementById("scanStatus").innerHTML = "<i class='fas fa-exclamation-circle'></i> Failed to scan QR Code. Please try again.";
+        document.getElementById("scanStatus").className = "status-message error";
         document.getElementById("scanQR").disabled = false;
         isProcessingScan = false;
     });
@@ -243,13 +243,22 @@ function loadUserScans(phone) {
     .then(data => {
         if (data.success) {
             const scansList = document.createElement("div");
-            scansList.innerHTML = `<h3>Your Scanned QR Codes (${data.count}):</h3>`;
+            scansList.className = "scans-list";
+            scansList.innerHTML = `<h4><i class="fas fa-history"></i> Your Scan History (${data.count}):</h4>`;
             
             if (data.scans.length > 0) {
                 const list = document.createElement("ul");
                 data.scans.forEach(scan => {
                     const item = document.createElement("li");
-                    item.textContent = `${scan.serial_number} - ${new Date(scan.scanned_at).toLocaleString()}`;
+                    item.innerHTML = `
+                        <div class="scan-item">
+                            <i class="fas fa-qrcode"></i>
+                            <div class="scan-details">
+                                <span class="scan-serial">${scan.serial_number}</span>
+                                <span class="scan-time">${new Date(scan.scanned_at).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    `;
                     list.appendChild(item);
                 });
                 scansList.appendChild(list);
@@ -268,8 +277,20 @@ function loadUserScans(phone) {
     })
     .catch(err => {
         console.error("Error loading user scans:", err);
-        document.getElementById("scanStatus").innerHTML = "Failed to load scan history";
-        document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
-        document.getElementById("scanStatus").style.color = "#c62828";
+        document.getElementById("scanStatus").innerHTML = "<i class='fas fa-exclamation-circle'></i> Failed to load scan history";
+        document.getElementById("scanStatus").className = "status-message error";
     });
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement("div");
+    alertDiv.className = `alert-message ${type} animate__animated animate__fadeInDown`;
+    alertDiv.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> ${message}`;
+    
+    document.querySelector(".container").appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.classList.add("animate__fadeOut");
+        setTimeout(() => alertDiv.remove(), 500);
+    }, 3000);
 }
