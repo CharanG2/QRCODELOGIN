@@ -3,10 +3,16 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
+const path = require("path");
 
 const app = express();
+
+// Middleware
 app.use(cors({ origin: "*" }));
 app.use(bodyParser.json());
+
+// Serve static files from the frontend directory
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 // PostgreSQL Database Connection
 const pool = new Pool({
@@ -23,6 +29,8 @@ pool.connect()
     });
 
 let otpStore = {};
+
+// API Routes
 
 // Generate and Send OTP
 app.post("/send-otp", (req, res) => {
@@ -151,5 +159,13 @@ app.post("/get-user-scans", async (req, res) => {
     }
 });
 
+// Serve the frontend's index.html for all other GET requests
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/index.html"));
+});
+
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Frontend served from: ${path.join(__dirname, "../frontend")}`);
+});
