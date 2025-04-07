@@ -11,8 +11,8 @@ const app = express();
 app.use(cors({ origin: "*" }));
 app.use(bodyParser.json());
 
-// Serve static files from the frontend directory
-app.use(express.static(path.join(__dirname, "../frontend")));
+// Serve static files from the root directory
+app.use(express.static(path.join(__dirname)));
 
 // PostgreSQL Database Connection
 const pool = new Pool({
@@ -159,13 +159,13 @@ app.post("/get-user-scans", async (req, res) => {
     }
 });
 
-// Serve the frontend's index.html for all other GET requests
+// Serve index.html for all other GET requests
 app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend/index.html"));
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`Frontend served from: ${path.join(__dirname, "../frontend")}`);
+    console.log(`Serving files from: ${__dirname}`);
 });
