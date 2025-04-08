@@ -3,16 +3,10 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
-const path = require("path");
 
 const app = express();
-
-// Middleware
 app.use(cors({ origin: "*" }));
 app.use(bodyParser.json());
-
-// Serve static files from the root directory
-app.use(express.static(path.join(__dirname)));
 
 // PostgreSQL Database Connection
 const pool = new Pool({
@@ -29,8 +23,6 @@ pool.connect()
     });
 
 let otpStore = {};
-
-// API Routes
 
 // Generate and Send OTP
 app.post("/send-otp", (req, res) => {
@@ -59,29 +51,18 @@ app.post("/verify-otp", (req, res) => {
 app.post("/scan-qr", async (req, res) => {
     const { serialNumber, phone } = req.body;
     if (!serialNumber || !phone) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Serial number and phone number are required!",
-            status: "error"
-        });
+        return res.status(400).json({ success: false, message: "Serial number and phone number are required!" });
     }
 
     try {
-        // Check if QR code exists and get scan status
+        // Check if QR code exists
         const qrCheck = await pool.query(
-            `SELECT id, phone_number, scanned, scan_timestamp 
-             FROM qr_codes 
-             WHERE serial_number = $1`, 
+            "SELECT id, phone_number, scanned FROM qr_codes WHERE serial_number = $1", 
             [serialNumber]
         );
 
         if (qrCheck.rows.length === 0) {
-            return res.json({ 
-                success: false, 
-                message: "Invalid QR Code!",
-                status: "error",
-                errorType: "invalid_code"
-            });
+            return res.json({ success: false, message: "QR Code not found!" });
         }
 
         const qrData = qrCheck.rows[0];
@@ -90,10 +71,8 @@ app.post("/scan-qr", async (req, res) => {
         if (qrData.phone_number === phone) {
             return res.json({ 
                 success: false,
-                message: `You have already scanned this QR code on ${new Date(qrData.scan_timestamp).toLocaleString()}`,
-                status: "warning",
-                errorType: "duplicate",
-                scanTimestamp: qrData.scan_timestamp
+                message: "You have already scanned this QR code!",
+                duplicate: true
             });
         }
 
@@ -102,9 +81,7 @@ app.post("/scan-qr", async (req, res) => {
             return res.json({ 
                 success: false,
                 message: "This QR code has already been used by another user!",
-                status: "error",
-                errorType: "already_used",
-                scanTimestamp: qrData.scan_timestamp
+                alreadyUsed: true
             });
         }
 
@@ -118,17 +95,14 @@ app.post("/scan-qr", async (req, res) => {
 
         return res.json({ 
             success: true,
-            message: "QR Code scanned successfully!",
-            status: "success",
-            scanTimestamp: new Date().toISOString()
+            message: "QR Code scanned successfully!"
         });
 
     } catch (error) {
         console.error("Database error:", error);
         return res.status(500).json({ 
             success: false,
-            message: "Database error",
-            status: "error"
+            message: "Database error" 
         });
     }
 });
@@ -159,13 +133,25 @@ app.post("/get-user-scans", async (req, res) => {
     }
 });
 
-// Serve index.html for all other GET requests
-app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+// Add new QR codes (admin endpoint)
+app.post("/add-qr-code", async (req, res) => {
+    const { serialNumber } = req.body;
+    if (!serialNumber) return res.status(400).json({ success: false, message: "Serial number is required!" });
+
+    try {
+        await pool.query(
+            "INSERT INTO qr_codes (serial_number) VALUES ($1)",
+            [serialNumber]
+        );
+        return res.json({ success: true, message: "QR Code added successfully!" });
+    } catch (error) {
+        if (error.code === '23505') {
+            return res.status(400).json({ success: false, message: "This QR code already exists!" });
+        }
+        console.error("Database error:", error);
+        return res.status(500).json({ success: false, message: "Database error" });
+    }
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Serving files from: ${__dirname}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
