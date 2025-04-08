@@ -7,6 +7,7 @@ let lastScannedCode = null;
 let isProcessingScan = false;
 let scanAttempts = 0;
 const MAX_SCAN_ATTEMPTS = 5;
+let scannedQRCodes = []; // Track scanned QR codes
 
 document.addEventListener('DOMContentLoaded', () => {
     // Phone number input validation
@@ -171,6 +172,19 @@ function startScanner() {
 
     scanner.render(
         (decodedText) => {
+            // Check if this QR code was already scanned
+            if (scannedQRCodes.includes(decodedText)) {
+                document.getElementById("scanStatus").innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    This QR code was already scanned!
+                    <small>Please scan a different QR code.</small>
+                `;
+                document.getElementById("scanStatus").className = "status-message warning";
+                document.getElementById("scanQR").disabled = false;
+                isProcessingScan = false;
+                return;
+            }
+
             if (isProcessingScan || decodedText === lastScannedCode) return;
             
             isProcessingScan = true;
@@ -242,6 +256,11 @@ function handleScannedQR(decodedText, phone) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
+            // Add to scanned codes list
+            if (!scannedQRCodes.includes(decodedText)) {
+                scannedQRCodes.push(decodedText);
+            }
+            
             document.getElementById("scanStatus").innerHTML = "<i class='fas fa-check-circle'></i> QR Code scanned successfully!";
             document.getElementById("scanStatus").className = "status-message success";
             loadUserScans(phone);
@@ -298,6 +317,9 @@ function loadUserScans(phone) {
                             <div class="scan-details">
                                 <span class="scan-serial">${scan.serial_number}</span>
                                 <span class="scan-time">${new Date(scan.scanned_at).toLocaleString()}</span>
+                            </div>
+                            <div class="scan-status ${scan.status === 'success' ? 'success' : 'failed'}">
+                                <i class="fas fa-${scan.status === 'success' ? 'check' : 'times'}"></i>
                             </div>
                         </div>
                     `;
