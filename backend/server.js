@@ -57,7 +57,7 @@ app.post("/scan-qr", async (req, res) => {
     try {
         // Check if QR code exists
         const qrCheck = await pool.query(
-            "SELECT id, phone_number, scanned FROM qr_codes WHERE serial_number = $1", 
+            "SELECT id, phone_number, scanned, scan_timestamp FROM qr_codes WHERE serial_number = $1", 
             [serialNumber]
         );
 
@@ -72,7 +72,8 @@ app.post("/scan-qr", async (req, res) => {
             return res.json({ 
                 success: false,
                 message: "You have already scanned this QR code!",
-                duplicate: true
+                duplicate: true,
+                scanTimestamp: qrData.scan_timestamp
             });
         }
 
