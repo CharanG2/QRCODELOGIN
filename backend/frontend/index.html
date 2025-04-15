@@ -9,78 +9,112 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="background-animation">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-    </div>
+    <div class="particles-container" id="particles-js"></div>
+    <div class="light-beam"></div>
 
     <div class="container">
-        <img src="NimbleLogo.png" class="logo" alt="Company Logo">
-        <h2>QR Code Login</h2>
+        <div class="container-inner">
+            <img src="NimbleLogo.png" class="logo" alt="Company Logo">
+            <h2>QR Code Login</h2>
 
-        <!-- Phone Input Section -->
-        <div id="phoneSection">
-            <div class="input-group">
-                <label for="phone" id="phoneLabel">Enter Phone Number</label>
-                <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
+            <!-- Phone Input Section -->
+            <div id="phoneSection">
+                <div class="input-group">
+                    <label for="phone" id="phoneLabel">Enter Phone Number</label>
+                    <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
+                </div>
+                <div class="button-group">
+                    <button id="sendOTP" class="primary-btn">
+                        <i class="fas fa-paper-plane"></i> Send OTP
+                        <span class="btn-glow"></span>
+                        <span class="btn-ripple"></span>
+                    </button>
+                </div>
             </div>
-            <div class="button-group">
-                <button id="sendOTP" class="primary-btn">
-                    <i class="fas fa-paper-plane"></i> Send OTP
-                </button>
-            </div>
-        </div>
 
-        <!-- OTP Section (Initially Hidden) -->
-        <div id="otpSection" class="hidden-section">
-            <div class="otp-header">
-                <button id="backToPhone" class="icon-btn">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <h3>Verify OTP</h3>
+            <!-- OTP Section (Initially Hidden) -->
+            <div id="otpSection" class="hidden-section">
+                <div class="otp-header">
+                    <button id="backToPhone" class="icon-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h3>Verify OTP</h3>
+                </div>
+                <div class="input-group">
+                    <p id="otpDisplay" class="otp-message">Your OTP: <span id="otpValue"></span></p>
+                    <label for="otp">Enter 6-digit OTP</label>
+                    <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
+                    <div id="otpTimer" class="timer"></div>
+                </div>
+                <div class="button-group">
+                    <button id="verifyOTP" class="primary-btn">
+                        <i class="fas fa-check-circle"></i> Verify
+                        <span class="btn-glow"></span>
+                        <span class="btn-ripple"></span>
+                    </button>
+                    <button id="resendOTP" class="secondary-btn" style="display: none;">
+                        <i class="fas fa-sync-alt"></i> Resend OTP
+                    </button>
+                </div>
             </div>
-            <div class="input-group">
-                <p id="otpDisplay" class="otp-message">Your OTP: <span id="otpValue"></span></p>
-                <label for="otp">Enter 6-digit OTP</label>
-                <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
-                <div id="otpTimer" class="timer"></div>
-            </div>
-            <div class="button-group">
-                <button id="verifyOTP" class="primary-btn">
-                    <i class="fas fa-check-circle"></i> Verify
-                </button>
-                <button id="resendOTP" class="secondary-btn" style="display: none;">
-                    <i class="fas fa-sync-alt"></i> Resend OTP
-                </button>
-            </div>
-        </div>
 
-        <!-- QR Scanner Section (Initially Hidden) -->
-        <div id="qrSection" class="hidden-section">
-            <div class="qr-header">
-                <button id="backToOtp" class="icon-btn">
-                    <i class="fas fa-arrow-left"></i>
+            <!-- QR Scanner Section (Initially Hidden) -->
+            <div id="qrSection" class="hidden-section">
+                <div class="qr-header">
+                    <button id="backToOtp" class="icon-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h3>Scan QR Code</h3>
+                </div>
+                <div class="qr-container">
+                    <button id="scanQR" class="primary-btn">
+                        <i class="fas fa-qrcode"></i> Start Scanner
+                        <span class="btn-glow"></span>
+                        <span class="btn-ripple"></span>
+                    </button>
+                    <div id="scanStatus" class="status-message"></div>
+                    <div id="qr-video" class="qr-video-container">
+                        <div class="scanner-overlay">
+                            <div class="scanner-frame"></div>
+                            <div class="scanner-line"></div>
+                        </div>
+                    </div>
+                    <div id="scansList" class="scans-list"></div>
+                </div>
+                <button id="cancelScan" class="secondary-btn">
+                    <i class="fas fa-times"></i> Cancel
                 </button>
-                <h3>Scan QR Code</h3>
             </div>
-            <div class="qr-container">
-                <button id="scanQR" class="primary-btn">
-                    <i class="fas fa-qrcode"></i> Start Scanner
-                </button>
-                <div id="scanStatus" class="status-message"></div>
-                <div id="qr-video" class="qr-video-container"></div>
-                <div id="scansList" class="scans-list"></div>
-            </div>
-            <button id="cancelScan" class="secondary-btn">
-                <i class="fas fa-times"></i> Cancel
-            </button>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
+        // Your existing JavaScript code remains the same
+        // Just add this at the beginning for particles initialization:
+        document.addEventListener('DOMContentLoaded', function() {
+            particlesJS('particles-js', {
+                "particles": {
+                    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+                    "color": { "value": "#00d4b8" },
+                    "shape": { "type": "circle", "stroke": { "width": 0, "color": "#000000" } },
+                    "opacity": { "value": 0.5, "random": true },
+                    "size": { "value": 3, "random": true },
+                    "line_linked": { "enable": true, "distance": 150, "color": "#00d4b8", "opacity": 0.3, "width": 1 },
+                    "move": { "enable": true, "speed": 2, "direction": "none", "random": true, "straight": false, "out_mode": "out" }
+                },
+                "interactivity": {
+                    "detect_on": "canvas",
+                    "events": {
+                        "onhover": { "enable": true, "mode": "repulse" },
+                        "onclick": { "enable": true, "mode": "push" },
+                        "resize": true
+                    }
+                }
+            });
+        });
+
+        // Rest of your existing JavaScript...
         let scanner;
         let otpTimer;
         let timeLeft = 30;
@@ -359,6 +393,24 @@
                 setTimeout(() => alertDiv.remove(), 500);
             }, 3000);
         }
+
+        // Add ripple effect to buttons
+        document.querySelectorAll('.primary-btn, .secondary-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const ripple = this.querySelector('.btn-ripple');
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                ripple.classList.add('animate');
+                
+                setTimeout(() => {
+                    ripple.classList.remove('animate');
+                }, 600);
+            });
+        });
     </script>
 </body>
 </html>
