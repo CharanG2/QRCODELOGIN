@@ -1,4 +1,3 @@
-/* styles.css */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 /* Base Styles */
@@ -15,7 +14,7 @@
   --info: #2d98da;
 }
 
-/* Background Animation */
+/* Background Styles */
 body {
   font-family: 'Poppins', sans-serif;
   color: var(--light);
@@ -24,10 +23,11 @@ body {
   align-items: center;
   min-height: 100vh;
   margin: 0;
-  background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364);
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
   background-size: 400% 400%;
   animation: gradientBG 15s ease infinite;
-  overflow-x: hidden;
+  overflow: hidden;
+  position: relative;
 }
 
 @keyframes gradientBG {
@@ -36,87 +36,62 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-.background-animation {
+.particles-container {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  z-index: -2;
+}
+
+.light-beam {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(0, 212, 184, 0.1) 0%, transparent 70%);
   z-index: -1;
-  overflow: hidden;
+  animation: pulseBeam 8s infinite alternate;
 }
 
-.particle {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  animation: float 15s infinite linear;
-}
-
-.particle:nth-child(1) {
-  width: 100px;
-  height: 100px;
-  top: 20%;
-  left: 10%;
-  animation-duration: 20s;
-}
-
-.particle:nth-child(2) {
-  width: 150px;
-  height: 150px;
-  top: 60%;
-  left: 80%;
-  animation-duration: 25s;
-}
-
-.particle:nth-child(3) {
-  width: 200px;
-  height: 200px;
-  top: 80%;
-  left: 30%;
-  animation-duration: 30s;
-}
-
-.particle:nth-child(4) {
-  width: 80px;
-  height: 80px;
-  top: 40%;
-  left: 60%;
-  animation-duration: 18s;
-}
-
-.particle:nth-child(5) {
-  width: 120px;
-  height: 120px;
-  top: 70%;
-  left: 20%;
-  animation-duration: 22s;
-}
-
-@keyframes float {
-  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; }
+@keyframes pulseBeam {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.7; }
 }
 
 /* Container Styles */
 .container {
+  position: relative;
+  width: 100%;
+  max-width: 26rem;
+  margin: 2rem;
+  perspective: 1000px;
+}
+
+.container-inner {
   background: rgba(255, 255, 255, 0.08);
   padding: 2.5rem;
   border-radius: 1.5rem;
   text-align: center;
-  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.3);
+  box-shadow: 
+    0 1rem 3rem rgba(0, 0, 0, 0.3),
+    0 0 2rem rgba(0, 212, 184, 0.2);
   backdrop-filter: blur(1rem);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  max-width: 26rem;
-  width: 90%;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  animation: fadeIn 0.8s ease-out forwards;
-  position: relative;
+  animation: fadeIn 0.8s ease-out forwards, float 6s ease-in-out infinite;
   overflow: hidden;
-  margin: 2rem;
+  transform-style: preserve-3d;
 }
 
-.container::before {
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  50% { transform: translateY(-1rem) rotateX(2deg) rotateY(2deg); }
+}
+
+.container-inner::before {
   content: "";
   position: absolute;
   top: -50%;
@@ -126,11 +101,11 @@ body {
   background: linear-gradient(
     to bottom right,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.1) 50%,
     rgba(255, 255, 255, 0) 100%
   );
   transform: rotate(45deg);
-  animation: shine 3s infinite;
+  animation: shine 6s infinite;
   z-index: -1;
 }
 
@@ -139,9 +114,11 @@ body {
   100% { transform: translateX(100%) rotate(45deg); }
 }
 
-.container:hover {
-  transform: translateY(-0.5rem) scale(1.02);
-  box-shadow: 0 1.5rem 3.5rem rgba(0, 212, 184, 0.25);
+.container-inner:hover {
+  transform: translateY(-0.5rem) scale(1.02) rotateX(1deg) rotateY(1deg);
+  box-shadow: 
+    0 1.5rem 3.5rem rgba(0, 212, 184, 0.25),
+    0 0 3rem rgba(0, 212, 184, 0.3);
 }
 
 /* Logo Styles */
@@ -155,6 +132,8 @@ body {
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .logo:hover {
@@ -162,6 +141,12 @@ body {
   filter: 
     drop-shadow(0 0 1rem rgba(0, 212, 184, 0.8))
     brightness(1.2);
+  animation: logoGlow 2s infinite alternate;
+}
+
+@keyframes logoGlow {
+  0% { box-shadow: 0 0 0.5rem rgba(0, 212, 184, 0.5); }
+  100% { box-shadow: 0 0 1.5rem rgba(0, 212, 184, 0.8); }
 }
 
 /* Typography */
@@ -232,6 +217,8 @@ input {
   box-shadow: 
     inset 0 0 0.5rem rgba(255, 255, 255, 0.1),
     0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 1;
 }
 
 input:focus {
@@ -241,6 +228,12 @@ input:focus {
     inset 0 0 0.5rem rgba(0, 212, 184, 0.2),
     0 0.5rem 1rem rgba(0, 212, 184, 0.3);
   transform: translateY(-0.1rem);
+  animation: inputPulse 1.5s infinite;
+}
+
+@keyframes inputPulse {
+  0%, 100% { box-shadow: inset 0 0 0.5rem rgba(0, 212, 184, 0.2), 0 0.5rem 1rem rgba(0, 212, 184, 0.3); }
+  50% { box-shadow: inset 0 0 0.5rem rgba(0, 212, 184, 0.3), 0 0.5rem 1.5rem rgba(0, 212, 184, 0.4); }
 }
 
 /* Button Styles */
@@ -265,6 +258,7 @@ button {
   justify-content: center;
   gap: 0.5rem;
   padding: 1rem;
+  z-index: 1;
 }
 
 .primary-btn {
@@ -273,6 +267,7 @@ button {
   box-shadow: 
     0 0.25rem 0.75rem rgba(108, 99, 255, 0.4),
     inset 0 -0.1rem 0.1rem rgba(0, 0, 0, 0.2);
+  position: relative;
 }
 
 .primary-btn:hover {
@@ -281,6 +276,48 @@ button {
     0 0.5rem 1.25rem rgba(108, 99, 255, 0.6),
     inset 0 -0.1rem 0.1rem rgba(0, 0, 0, 0.2);
   transform: translateY(-0.1rem);
+  animation: btnGlow 1.5s infinite alternate;
+}
+
+.btn-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.primary-btn:hover .btn-glow {
+  opacity: 0.6;
+}
+
+.btn-ripple {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  transform: scale(0);
+  pointer-events: none;
+}
+
+.btn-ripple.animate {
+  animation: ripple 0.6s linear;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(10);
+    opacity: 0;
+  }
+}
+
+@keyframes btnGlow {
+  0% { box-shadow: 0 0.5rem 1.25rem rgba(108, 99, 255, 0.6); }
+  100% { box-shadow: 0 0.5rem 1.75rem rgba(108, 99, 255, 0.8); }
 }
 
 .secondary-btn {
@@ -339,6 +376,13 @@ button {
   border-radius: 0.5rem;
   margin-bottom: 1rem;
   border: 1px solid rgba(0, 212, 184, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 212, 184, 0.2); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 212, 184, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 212, 184, 0); }
 }
 
 .timer {
@@ -364,6 +408,45 @@ button {
   overflow: hidden;
   margin: 1rem 0;
   border: 2px dashed rgba(255, 255, 255, 0.2);
+  position: relative;
+}
+
+.scanner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.scanner-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  height: 70%;
+  border: 3px solid var(--success);
+  border-radius: 1rem;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.7);
+}
+
+.scanner-line {
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 70%;
+  height: 4px;
+  background: var(--success);
+  animation: scanLine 3s infinite linear;
+  box-shadow: 0 0 10px var(--success);
+}
+
+@keyframes scanLine {
+  0% { top: 15%; }
+  100% { top: 85%; }
 }
 
 .status-message {
@@ -418,6 +501,12 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: all 0.3s ease;
+}
+
+.scans-list li:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(0.5rem);
 }
 
 .scans-list li i {
@@ -499,7 +588,7 @@ button {
 
 /* Responsive adjustments */
 @media (max-width: 480px) {
-  .container {
+  .container-inner {
     padding: 1.5rem;
     width: 95%;
     margin: 1rem;
