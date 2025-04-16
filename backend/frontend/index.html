@@ -9,25 +9,45 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="particles-container" id="particles-js"></div>
-    <div class="light-beam"></div>
+    <div class="background-pattern"></div>
+    <div class="floating-shapes">
+        <div class="shape circle"></div>
+        <div class="shape triangle"></div>
+        <div class="shape square"></div>
+    </div>
 
     <div class="container">
         <div class="container-inner">
-            <img src="NimbleLogo.png" class="logo" alt="Company Logo">
+            <div class="logo-container">
+                <img src="NimbleLogo.png" class="logo" alt="Company Logo">
+                <div class="logo-shadow"></div>
+            </div>
             <h2>QR Code Login</h2>
+            <p class="subtitle">Secure authentication for your account</p>
 
             <!-- Phone Input Section -->
             <div id="phoneSection">
                 <div class="input-group">
                     <label for="phone" id="phoneLabel">Enter Phone Number</label>
-                    <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
+                    <div class="input-wrapper">
+                        <i class="fas fa-phone input-icon"></i>
+                        <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
+                        <div class="input-underline"></div>
+                    </div>
                 </div>
                 <div class="button-group">
                     <button id="sendOTP" class="primary-btn">
                         <i class="fas fa-paper-plane"></i> Send OTP
                         <span class="btn-glow"></span>
                         <span class="btn-ripple"></span>
+                    </button>
+                </div>
+                <div class="alternative-auth">
+                    <div class="divider">
+                        <span>OR</span>
+                    </div>
+                    <button class="social-btn google-btn">
+                        <i class="fab fa-google"></i> Continue with Google
                     </button>
                 </div>
             </div>
@@ -42,8 +62,14 @@
                 </div>
                 <div class="input-group">
                     <p id="otpDisplay" class="otp-message">Your OTP: <span id="otpValue"></span></p>
-                    <label for="otp">Enter 6-digit OTP</label>
-                    <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
+                    <div class="otp-inputs">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                    </div>
                     <div id="otpTimer" class="timer"></div>
                 </div>
                 <div class="button-group">
@@ -67,6 +93,9 @@
                     <h3>Scan QR Code</h3>
                 </div>
                 <div class="qr-container">
+                    <div class="qr-instructions">
+                        <i class="fas fa-info-circle"></i> Point your camera at the QR code to scan
+                    </div>
                     <button id="scanQR" class="primary-btn">
                         <i class="fas fa-qrcode"></i> Start Scanner
                         <span class="btn-glow"></span>
@@ -88,29 +117,31 @@
         </div>
     </div>
 
+    <div class="notification-bell">
+        <i class="fas fa-bell"></i>
+        <span class="notification-count">2</span>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
         // Your existing JavaScript code remains the same
         // Just add this at the beginning for particles initialization:
         document.addEventListener('DOMContentLoaded', function() {
-            particlesJS('particles-js', {
-                "particles": {
-                    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
-                    "color": { "value": "#00d4b8" },
-                    "shape": { "type": "circle", "stroke": { "width": 0, "color": "#000000" } },
-                    "opacity": { "value": 0.5, "random": true },
-                    "size": { "value": 3, "random": true },
-                    "line_linked": { "enable": true, "distance": 150, "color": "#00d4b8", "opacity": 0.3, "width": 1 },
-                    "move": { "enable": true, "speed": 2, "direction": "none", "random": true, "straight": false, "out_mode": "out" }
-                },
-                "interactivity": {
-                    "detect_on": "canvas",
-                    "events": {
-                        "onhover": { "enable": true, "mode": "repulse" },
-                        "onclick": { "enable": true, "mode": "push" },
-                        "resize": true
+            // Remove particles.js initialization for cleaner white background
+            if (window.particlesJS) {
+                window.particlesJS('particles-js', {
+                    "particles": {
+                        "number": { "value": 0 } // Disable particles
                     }
-                }
+                });
+            }
+
+            // Add floating shapes animation
+            const shapes = document.querySelectorAll('.shape');
+            shapes.forEach((shape, index) => {
+                shape.style.animation = `floatShape ${8 + index * 2}s infinite ease-in-out`;
+                shape.style.opacity = '0.1';
+                shape.style.setProperty('--delay', `${index * 0.5}s`);
             });
         });
 
@@ -409,6 +440,26 @@
                 setTimeout(() => {
                     ripple.classList.remove('animate');
                 }, 600);
+            });
+        });
+
+        // OTP digit input auto-focus
+        const otpDigits = document.querySelectorAll('.otp-digit');
+        otpDigits.forEach((digit, index) => {
+            digit.addEventListener('input', function() {
+                if (this.value.length === 1) {
+                    if (index < otpDigits.length - 1) {
+                        otpDigits[index + 1].focus();
+                    }
+                }
+            });
+            
+            digit.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value.length === 0) {
+                    if (index > 0) {
+                        otpDigits[index - 1].focus();
+                    }
+                }
             });
         });
     </script>
