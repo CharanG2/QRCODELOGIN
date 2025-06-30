@@ -56,8 +56,12 @@ function sendOTP() {
         document.getElementById("sendOTP").style.display = "none";
         document.getElementById("phoneLabel").style.display = "none";
 
-        document.getElementById("otp").value = "";
-        document.getElementById("otp").disabled = false;
+        // Clear and enable OTP digits
+        document.querySelectorAll(".otp-digit").forEach(d => {
+            d.value = "";
+            d.disabled = false;
+        });
+
         document.getElementById("verifyOTP").disabled = false;
 
         startTimer();
@@ -79,7 +83,7 @@ function startTimer() {
 
         if (timeLeft <= 0) {
             clearInterval(otpTimer);
-            document.getElementById("otp").disabled = true;
+            document.querySelectorAll(".otp-digit").forEach(d => d.disabled = true);
             document.getElementById("verifyOTP").disabled = true;
             document.getElementById("otpDisplay").innerText = "OTP expired. Please request a new one.";
             document.getElementById("resendOTP").style.display = "inline";
@@ -98,10 +102,12 @@ function updateTimerDisplay() {
 
 function verifyOTP() {
     let phone = document.getElementById("phone").value;
-    let otp = document.getElementById("otp").value;
+    let otp = Array.from(document.querySelectorAll(".otp-digit"))
+                   .map(d => d.value)
+                   .join('');
 
-    if (!otp) {
-        alert("Please enter the OTP");
+    if (otp.length !== 6) {
+        alert("Please enter the full 6-digit OTP");
         return;
     }
 
@@ -122,7 +128,7 @@ function verifyOTP() {
             alert("Invalid OTP!");
             if (attemptCount >= MAX_ATTEMPTS) {
                 document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
-                document.getElementById("otp").disabled = true;
+                document.querySelectorAll(".otp-digit").forEach(d => d.disabled = true);
                 document.getElementById("verifyOTP").disabled = true;
                 document.getElementById("resendOTP").disabled = true;
                 clearInterval(otpTimer);
