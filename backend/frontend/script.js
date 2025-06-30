@@ -3,21 +3,18 @@ let otpTimer;
 let timeLeft = 30;
 let attemptCount = 0;
 const MAX_ATTEMPTS = 3;
+let currentPhone = "";  // ✅ Store phone globally after OTP sent
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Phone number input validation
-    document.getElementById("phone").addEventListener("input", function(e) {
+    document.getElementById("phone").addEventListener("input", function() {
         this.value = this.value.replace(/[^0-9]/g, '');
         if (this.value.length > 10) {
             this.value = this.value.slice(0, 10);
         }
     });
 
-    // Send OTP Functionality
     document.getElementById("sendOTP").addEventListener("click", sendOTP);
-
-    // Resend OTP Functionality
-    document.getElementById("resendOTP").addEventListener("click", function() {
+    document.getElementById("resendOTP").addEventListener("click", () => {
         if (attemptCount >= MAX_ATTEMPTS) {
             alert("Maximum attempts reached. Please try again later.");
             return;
@@ -25,20 +22,19 @@ document.addEventListener('DOMContentLoaded', () => {
         sendOTP();
     });
 
-    // Verify OTP Functionality
     document.getElementById("verifyOTP").addEventListener("click", verifyOTP);
-
-    // Scan QR Code Functionality
     document.getElementById("scanQR").addEventListener("click", startScanner);
 });
 
 function sendOTP() {
-    let phone = document.getElementById("phone").value;
-    
+    const phone = document.getElementById("phone").value;
+
     if (phone.length !== 10) {
         alert("Please enter exactly 10-digit phone number.");
         return;
     }
+
+    currentPhone = phone;  // ✅ Save phone for later use
 
     fetch("https://qrcodelogin-9741.onrender.com/send-otp", {
         method: "POST",
@@ -56,12 +52,8 @@ function sendOTP() {
         document.getElementById("sendOTP").style.display = "none";
         document.getElementById("phoneLabel").style.display = "none";
 
-        // Clear and enable OTP digits
-        document.querySelectorAll(".otp-digit").forEach(d => {
-            d.value = "";
-            d.disabled = false;
-        });
-
+        document.getElementById("otp").value = "";
+        document.getElementById("otp").disabled = false;
         document.getElementById("verifyOTP").disabled = false;
 
         startTimer();
@@ -83,11 +75,11 @@ function startTimer() {
 
         if (timeLeft <= 0) {
             clearInterval(otpTimer);
-            document.querySelectorAll(".otp-digit").forEach(d => d.disabled = true);
+            document.getElementById("otp").disabled = true;
             document.getElementById("verifyOTP").disabled = true;
             document.getElementById("otpDisplay").innerText = "OTP expired. Please request a new one.";
             document.getElementById("resendOTP").style.display = "inline";
-            
+
             if (attemptCount >= MAX_ATTEMPTS) {
                 document.getElementById("resendOTP").disabled = true;
                 document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
@@ -101,15 +93,15 @@ function updateTimerDisplay() {
 }
 
 function verifyOTP() {
-    let phone = document.getElementById("phone").value;
-    let otp = Array.from(document.querySelectorAll(".otp-digit"))
-                   .map(d => d.value)
-                   .join('');
+    const otp = document.getElementById("otp").value.trim();
+    const phone = currentPhone;  // ✅ Use saved phone number
 
-    if (otp.length !== 6) {
-        alert("Please enter the full 6-digit OTP");
+    if (!otp) {
+        alert("Please enter the OTP");
         return;
     }
+
+    document.getElementById("verifyOTP").disabled = true;  // Prevent multiple clicks
 
     fetch("https://qrcodelogin-9741.onrender.com/verify-otp", {
         method: "POST",
@@ -118,6 +110,7 @@ function verifyOTP() {
     })
     .then(res => res.json())
     .then(data => {
+        console.log("Verification response:", data);
         if (data.success) {
             clearInterval(otpTimer);
             document.getElementById("qrSection").style.display = "block";
@@ -126,9 +119,11 @@ function verifyOTP() {
             loadUserScans(phone);
         } else {
             alert("Invalid OTP!");
+            document.getElementById("verifyOTP").disabled = false;
+
             if (attemptCount >= MAX_ATTEMPTS) {
                 document.getElementById("otpDisplay").innerText = "Maximum attempts reached. Please try again later.";
-                document.querySelectorAll(".otp-digit").forEach(d => d.disabled = true);
+                document.getElementById("otp").disabled = true;
                 document.getElementById("verifyOTP").disabled = true;
                 document.getElementById("resendOTP").disabled = true;
                 clearInterval(otpTimer);
@@ -138,11 +133,12 @@ function verifyOTP() {
     .catch(error => {
         console.error("Error verifying OTP:", error);
         alert("OTP verification failed.");
+        document.getElementById("verifyOTP").disabled = false;
     });
 }
 
 function startScanner() {
-    const phone = document.getElementById("phone").value;
+    const phone = currentPhone;
     if (!phone) {
         alert("Please verify your phone number first.");
         return;
@@ -181,14 +177,11 @@ function handleScannedQR(decodedText, phone) {
     document.getElementById("scanStatus").innerHTML = "Processing QR code...";
     document.getElementById("scanStatus").style.backgroundColor = "#e6f7ff";
     document.getElementById("scanStatus").style.color = "#0066cc";
-    
+
     fetch("https://qrcodelogin-9741.onrender.com/scan-qr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-            serialNumber: decodedText,
-            phone: phone
-        })
+        body: JSON.stringify({ serialNumber: decodedText, phone })
     })
     .then(res => res.json())
     .then(data => {
@@ -201,7 +194,7 @@ function handleScannedQR(decodedText, phone) {
             document.getElementById("scanStatus").innerHTML = data.message;
             document.getElementById("scanStatus").style.backgroundColor = "#ffebee";
             document.getElementById("scanStatus").style.color = "#c62828";
-            
+
             if (data.alreadyUsed) {
                 document.getElementById("scanStatus").innerHTML += "<br>This QR code is already assigned to another user.";
             }
@@ -228,7 +221,7 @@ function loadUserScans(phone) {
         if (data.success) {
             const scansList = document.createElement("div");
             scansList.innerHTML = `<h3>Your Scanned QR Codes (${data.count}):</h3>`;
-            
+
             if (data.scans.length > 0) {
                 const list = document.createElement("ul");
                 data.scans.forEach(scan => {
@@ -240,7 +233,7 @@ function loadUserScans(phone) {
             } else {
                 scansList.innerHTML += "<p>No QR codes scanned yet.</p>";
             }
-            
+
             const existingList = document.getElementById("scansList");
             if (existingList) {
                 existingList.replaceWith(scansList);
